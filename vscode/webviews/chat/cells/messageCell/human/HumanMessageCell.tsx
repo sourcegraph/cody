@@ -48,7 +48,7 @@ interface HumanMessageCellProps {
 /**
  * A component that displays a chat message from the human.
  */
-export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherProps }) => {
+export const HumanMessageCell: FC<HumanMessageCellProps> = memo(({ message, ...otherProps }) => {
     // Don't render the editor if the message text is explicitly undefined or empty,
     // and it's been sent already and it's not the last interaction (i.e. there is a tool result response).
     if (
@@ -67,7 +67,7 @@ export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherP
     )
 
     return <HumanMessageCellContent {...otherProps} initialEditorState={initialEditorState} />
-}
+})
 
 type HumanMessageCellContent = {
     initialEditorState: SerializedPromptEditorState

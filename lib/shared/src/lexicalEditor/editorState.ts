@@ -11,7 +11,6 @@ import { type ContextItem, ContextItemSource } from '../codebase-context/message
 import type { RangeData } from '../common/range'
 import { displayPath } from '../editor/displayPath'
 import type { PromptString } from '../prompt/prompt-string'
-import { memoize } from '../utils'
 import { AT_MENTION_SERIALIZED_PREFIX, deserializeParagraph } from './atMentionsSerializer'
 import {
     CONTEXT_ITEM_MENTION_NODE_TYPE,
@@ -148,36 +147,36 @@ export function serializedPromptEditorStateFromText(text: string): SerializedPro
     }
 }
 
-export const serializedPromptEditorStateFromChatMessage = memoize(
-    (chatMessage: ChatMessage): SerializedPromptEditorState => {
-        function isCompatibleVersionEditorState(value: unknown): value is SerializedPromptEditorState {
-            if (!value) {
-                return false
-            }
-
-            const editorState = value as SerializedPromptEditorState
-
-            // We can read this if the version of the serialized text is compatible
-            // or its minimum version is compatible.
-            return (
-                SUPPORTED_READER_VERSIONS.includes(editorState.v) ||
-                SUPPORTED_READER_VERSIONS.includes(editorState.minReaderV ?? DEFAULT_MIN_READER_V)
-            )
+export const serializedPromptEditorStateFromChatMessage = (
+    chatMessage: ChatMessage
+): SerializedPromptEditorState => {
+    function isCompatibleVersionEditorState(value: unknown): value is SerializedPromptEditorState {
+        if (!value) {
+            return false
         }
 
-        if (isCompatibleVersionEditorState(chatMessage.editorState)) {
-            return chatMessage.editorState
-        }
+        const editorState = value as SerializedPromptEditorState
 
-        // Fall back to using plain text for chat messages that don't have a serialized Lexical editor
-        // state that we recognize.
-        //
-        // It would be smoother to automatically import or convert textual @-mentions to the Lexical
-        // mention nodes, but that would add a lot of extra complexity for the relatively rare use case
-        // of editing old messages in your chat history.
-        return serializedPromptEditorStateFromText(chatMessage.text ? chatMessage.text.toString() : '')
+        // We can read this if the version of the serialized text is compatible
+        // or its minimum version is compatible.
+        return (
+            SUPPORTED_READER_VERSIONS.includes(editorState.v) ||
+            SUPPORTED_READER_VERSIONS.includes(editorState.minReaderV ?? DEFAULT_MIN_READER_V)
+        )
     }
-)
+
+    if (isCompatibleVersionEditorState(chatMessage.editorState)) {
+        return chatMessage.editorState
+    }
+
+    // Fall back to using plain text for chat messages that don't have a serialized Lexical editor
+    // state that we recognize.
+    //
+    // It would be smoother to automatically import or convert textual @-mentions to the Lexical
+    // mention nodes, but that would add a lot of extra complexity for the relatively rare use case
+    // of editing old messages in your chat history.
+    return serializedPromptEditorStateFromText(chatMessage.text ? chatMessage.text.toString() : '')
+}
 
 export function contextItemsFromPromptEditorValue(
     state: SerializedPromptEditorState
