@@ -687,7 +687,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const onRegenerate = useCallback(
         (code: string, language?: string) => {
-            if (assistantMessage) {
+            if (assistantMessage?.index) {
                 const id = uuid.v4()
                 regenerateCodeBlock({ id, code, language, index: assistantMessage.index })
                 setRegeneratingCodeBlocks(blocks => [
@@ -698,7 +698,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 console.warn('tried to regenerate a code block, but there is no assistant message')
             }
         },
-        [assistantMessage]
+        [assistantMessage?.index]
     )
 
     const isAgenticMode = useMemo(
