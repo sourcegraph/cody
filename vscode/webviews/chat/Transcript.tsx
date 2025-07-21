@@ -40,6 +40,7 @@ import { useClientActionListener } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
 
 import { ScrollDown } from '../components/ScrollDown'
+import { useRefState } from '../utils/use-ref-state'
 import { TokenUsageDisplay } from './TokenUsageDisplay'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
@@ -201,7 +202,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         []
     )
 
-    const scrollTotheBottom = useCallback(() => {
+    const scrollToBottom = useCallback(() => {
         scrollableContainer?.scroll({
             top: scrollableContainer?.scrollHeight,
             behavior: 'smooth',
@@ -285,7 +286,7 @@ export const Transcript: FC<TranscriptProps> = props => {
                     {scrollableContainer && <ScrollbarMarkers scrollContainer={scrollableContainer} />}
 
                     {!isAtBottomDebounced && interactions.length > 1 && (
-                        <ScrollDown onClick={scrollTotheBottom} />
+                        <ScrollDown onClick={scrollToBottom} />
                     )}
 
                     <div className="tw-bg-[var(--vscode-input-background)]">
@@ -409,11 +410,22 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     } = props
 
     const { activeChatContext, setActiveChatContext } = props
+
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     const lastEditorRef = useContext(LastEditorContext)
-    useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
+    const [_, getAssistantMessage] = useRefState(assistantMessage)
     const [selectedIntent, setSelectedIntent] = useState<ChatMessage['intent']>(humanMessage?.intent)
+    // We track, ephemerally, the code blocks that are being regenerated so
+    // we can show an accurate loading indicator or error message on those
+    // blocks.
+    const [regeneratingCodeBlocks, setRegeneratingCodeBlocks] = useState<RegeneratingCodeBlockState[]>(
+        []
+    )
+
+    const vscodeAPI = useMemo(() => getVSCodeAPI(), [])
+
+    useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
     // Reset intent to 'chat' when there are no interactions (new chat)
     useEffect(() => {
@@ -482,7 +494,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage, setActiveChatContext, isLastSentInteraction, lastEditorRef]
     )
 
-    const vscodeAPI = getVSCodeAPI()
     const onStop = useCallback(() => {
         vscodeAPI.postMessage({
             command: 'abort',
@@ -500,16 +511,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const timeToFirstTokenSpan = useRef<Span>()
     const hasRecordedFirstToken = useRef(false)
 
-    const [isLoading, setIsLoading] = useState(assistantMessage?.isLoading)
-
     const [isThoughtProcessOpened, setThoughtProcessOpened] = useLocalStorage(
         'cody.thinking-space.open',
         true
     )
-
-    useEffect(() => {
-        setIsLoading(assistantMessage?.isLoading)
-    }, [assistantMessage])
 
     const humanMessageText = humanMessage.text
     const smartApplyWithInstruction = useMemo(() => {
@@ -617,10 +622,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             context.with(activeChatContext, startRenderSpan)
         }
         // Case 2: End rendering if loading is complete and a render span exists
-        else if (!isLoading && renderSpan.current) {
+        else if (!assistantMessage?.isLoading && renderSpan.current) {
             endRenderSpan()
         }
-    }, [assistantMessage, activeChatContext, setActiveChatContext, spanManager, isLoading])
+    }, [assistantMessage, activeChatContext, setActiveChatContext, spanManager])
 
     const humanMessageInfo = useMemo(() => {
         // See SRCH-942: it's critical to memoize this value to avoid repeated
@@ -651,12 +656,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage, onUserAction, selectedIntent]
     )
 
-    // We track, ephemerally, the code blocks that are being regenerated so
-    // we can show an accurate loading indicator or error message on those
-    // blocks.
-    const [regeneratingCodeBlocks, setRegeneratingCodeBlocks] = useState<RegeneratingCodeBlockState[]>(
-        []
-    )
     useClientActionListener(
         { isActive: true, selector: event => Boolean(event.regenerateStatus) },
         useCallback(event => {
@@ -687,6 +686,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const onRegenerate = useCallback(
         (code: string, language?: string) => {
+            const assistantMessage = getAssistantMessage()
             if (assistantMessage) {
                 const id = uuid.v4()
                 regenerateCodeBlock({ id, code, language, index: assistantMessage.index })
@@ -698,7 +698,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 console.warn('tried to regenerate a code block, but there is no assistant message')
             }
         },
-        [assistantMessage]
+        [getAssistantMessage]
     )
 
     const isAgenticMode = useMemo(
@@ -770,7 +770,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         key={assistantMessage.index}
                         userInfo={userInfo}
                         models={models}
-                        chatEnabled={chatEnabled}
                         message={assistantMessage}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
@@ -781,7 +780,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         humanMessage={humanMessageInfo}
                         isLoading={isLastSentInteraction && assistantMessage.isLoading}
                         smartApply={isAgenticMode ? undefined : smartApplyWithInstruction}
-                        isLastSentInteraction={isLastSentInteraction}
                         setThoughtProcessOpened={setThoughtProcessOpened}
                         isThoughtProcessOpened={isThoughtProcessOpened}
                     />

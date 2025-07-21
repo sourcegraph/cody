@@ -126,6 +126,7 @@ export const MarkdownFromCody: FunctionComponent<{
 }
 
 let _markdownPluginProps: ReturnType<typeof markdownPluginProps> | undefined
+
 function markdownPluginProps(
     prefixRemarkPlugins: Pluggable[] = []
 ): Pick<ComponentProps<typeof Markdown>, 'rehypePlugins' | 'remarkPlugins'> {
@@ -181,5 +182,6 @@ function markdownPluginProps(
         ],
         remarkPlugins: [...prefixRemarkPlugins, remarkGFM, remarkAttachFilePathToCodeBlocks],
     }
+
     return _markdownPluginProps
 }

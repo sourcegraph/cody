@@ -18,7 +18,7 @@ import {
 } from 'lexical'
 import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import isEqual from 'lodash/isEqual'
-import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
+import { type FunctionComponent, memo, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import { useSetGlobalPromptEditorConfig } from './config'
@@ -87,269 +87,272 @@ export interface PromptEditorRefAPI {
 /**
  * The component for composing and editing prompts.
  */
-export const PromptEditor: FunctionComponent<Props> = ({
-    editorClassName,
-    contentEditableClassName,
-    seamless,
-    placeholder,
-    initialEditorState,
-    onChange,
-    onFocusChange,
-    contextWindowSizeInTokens,
-    disabled,
-    editorRef: ref,
-    onEnterKey,
-    openExternalLink,
-}) => {
-    const editorRef = useRef<LexicalEditor>(null)
+export const PromptEditor: FunctionComponent<Props> = memo(
+    ({
+        editorClassName,
+        contentEditableClassName,
+        seamless,
+        placeholder,
+        initialEditorState,
+        onChange,
+        onFocusChange,
+        contextWindowSizeInTokens,
+        disabled,
+        editorRef: ref,
+        onEnterKey,
+        openExternalLink,
+    }) => {
+        const editorRef = useRef<LexicalEditor>(null)
 
-    const hasSetInitialContext = useRef(false)
-    useImperativeHandle(
-        ref,
-        (): PromptEditorRefAPI => ({
-            setEditorState(state: SerializedPromptEditorState): void {
+        const hasSetInitialContext = useRef(false)
+        useImperativeHandle(
+            ref,
+            (): PromptEditorRefAPI => ({
+                setEditorState(state: SerializedPromptEditorState): void {
+                    const editor = editorRef.current
+                    if (editor) {
+                        editor.setEditorState(editor.parseEditorState(state.lexicalEditorState))
+                    }
+                },
+                getSerializedValue(): SerializedPromptEditorValue {
+                    if (!editorRef.current) {
+                        throw new Error('PromptEditor has no Lexical editor ref')
+                    }
+                    return toSerializedPromptEditorValue(editorRef.current)
+                },
+                setFocus(focus, { moveCursorToEnd } = {}): Promise<void> {
+                    if (!editorRef.current) {
+                        return Promise.resolve()
+                    }
+                    return setFocus(editorRef.current, { focus, moveCursorToEnd })
+                },
+                appendText(text: string): Promise<void> {
+                    if (!editorRef.current) {
+                        return Promise.resolve()
+                    }
+                    return appendText(editorRef.current, text)
+                },
+                openAtMentionMenu() {
+                    const editor = editorRef.current
+                    if (!editor) {
+                        return Promise.resolve()
+                    }
+
+                    if (toSerializedPromptEditorValue(editor).text.trim().endsWith('@')) {
+                        return setFocus(editor, { focus: true, moveCursorToEnd: true })
+                    }
+                    return appendText(editorRef.current, '@')
+                },
+                filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void> {
+                    if (!editorRef.current) {
+                        return Promise.resolve()
+                    }
+
+                    return update(editorRef.current, () => {
+                        let updated = false
+                        walkContextItemMentionNodes($getRoot(), node => {
+                            if (!filter(node.contextItem)) {
+                                node.remove()
+                                updated = true
+                            }
+                        })
+                        return updated
+                    })
+                },
+                async addMentions(
+                    items: ContextItem[],
+                    position: 'before' | 'after' = 'after',
+                    sep = ' '
+                ): Promise<void> {
+                    const editor = editorRef.current
+                    if (!editor) {
+                        return
+                    }
+
+                    const newContextItems = items.map(serializeContextItem)
+                    const existingMentions = getContextItemsForEditor(editor)
+                    const ops = getMentionOperations(existingMentions, newContextItems)
+
+                    await update(editor, () => {
+                        if (ops.modify.size + ops.delete.size === 0) {
+                            return false
+                        }
+
+                        walkContextItemMentionNodes($getRoot(), existing => {
+                            const update = ops.modify.get(existing.contextItem)
+                            if (update) {
+                                // replace the existing mention inline with the new one
+                                existing.replace($createContextItemMentionNode(update))
+                            }
+                            if (ops.delete.has(existing.contextItem)) {
+                                existing.remove()
+                            }
+                        })
+                        return true
+                    })
+
+                    return update(editor, () => {
+                        if (ops.create.length === 0) {
+                            return false
+                        }
+
+                        $insertMentions(ops.create, position, sep)
+                        $selectEnd()
+                        return true
+                    })
+                },
+                async upsertMentions(
+                    items,
+                    position = 'after',
+                    sep = ' ',
+                    focusEditor = true
+                ): Promise<void> {
+                    const editor = editorRef.current
+                    if (!editor) {
+                        return
+                    }
+
+                    const existingMentions = new Set(
+                        getContextItemsForEditor(editor).map(getKeyForContextItem)
+                    )
+                    const toUpdate = new Map<string, ContextItem>()
+                    for (const item of items) {
+                        const key = getKeyForContextItem(item)
+                        if (existingMentions.has(key)) {
+                            toUpdate.set(key, item)
+                        }
+                    }
+
+                    await update(editor, () => {
+                        if (toUpdate.size === 0) {
+                            return false
+                        }
+
+                        walkContextItemMentionNodes($getRoot(), existing => {
+                            const update = toUpdate.get(getKeyForContextItem(existing.contextItem))
+                            if (update) {
+                                // replace the existing mention inline with the new one
+                                existing.replace($createContextItemMentionNode(update))
+                            }
+                        })
+                        if (focusEditor) {
+                            $selectEnd()
+                        } else {
+                            // Workaround for preventing the editor from stealing focus
+                            // (https://github.com/facebook/lexical/issues/2636#issuecomment-1184418601)
+                            // We need this until we can use the new 'skip-dom-selection' tag as
+                            // explained in https://lexical.dev/docs/concepts/selection#focus, introduced
+                            // by https://github.com/facebook/lexical/pull/6894
+                            $setSelection(null)
+                        }
+                        return true
+                    })
+                    return update(editor, () => {
+                        if (items.length === toUpdate.size) {
+                            return false
+                        }
+                        $insertMentions(
+                            items.filter(item => !toUpdate.has(getKeyForContextItem(item))),
+                            position,
+                            sep
+                        )
+                        if (focusEditor) {
+                            $selectEnd()
+                        } else {
+                            // Workaround for preventing the editor from stealing focus
+                            // (https://github.com/facebook/lexical/issues/2636#issuecomment-1184418601)
+                            // We need this until we can use the new 'skip-dom-selection' tag as
+                            // explained in https://lexical.dev/docs/concepts/selection#focus, introduced
+                            // by https://github.com/facebook/lexical/pull/6894
+                            $setSelection(null)
+                        }
+                        return true
+                    })
+                },
+                setInitialContextMentions(items: ContextItem[]): Promise<void> {
+                    const editor = editorRef.current
+                    if (!editor) {
+                        return Promise.resolve()
+                    }
+
+                    return update(editor, () => {
+                        let updated = false
+
+                        if (!hasSetInitialContext.current || isEditorContentOnlyInitialContext(editor)) {
+                            if (isEditorContentOnlyInitialContext(editor)) {
+                                // Only clear in this case so that we don't clobber any text that was
+                                // inserted before initial context was received.
+                                $getRoot().clear()
+                                updated = true
+                            }
+                            const nodesToInsert = lexicalNodesForContextItems(items, {
+                                isFromInitialContext: true,
+                            })
+
+                            // Add whitespace after initial context items chips
+                            if (items.length > 0) {
+                                nodesToInsert.push($createTextNode(' '))
+                                updated = true
+                            }
+
+                            $setSelection($getRoot().selectStart()) // insert at start
+                            $insertNodes(nodesToInsert)
+                            $selectEnd()
+                            hasSetInitialContext.current = true
+                        }
+
+                        return updated
+                    })
+                },
+            }),
+            []
+        )
+
+        useSetGlobalPromptEditorConfig()
+
+        const onBaseEditorChange = useCallback(
+            (_editorState: EditorState, editor: LexicalEditor): void => {
+                if (onChange) {
+                    onChange(toSerializedPromptEditorValue(editor))
+                }
+            },
+            [onChange]
+        )
+
+        useEffect(() => {
+            if (initialEditorState) {
                 const editor = editorRef.current
                 if (editor) {
-                    editor.setEditorState(editor.parseEditorState(state.lexicalEditorState))
-                }
-            },
-            getSerializedValue(): SerializedPromptEditorValue {
-                if (!editorRef.current) {
-                    throw new Error('PromptEditor has no Lexical editor ref')
-                }
-                return toSerializedPromptEditorValue(editorRef.current)
-            },
-            setFocus(focus, { moveCursorToEnd } = {}): Promise<void> {
-                if (!editorRef.current) {
-                    return Promise.resolve()
-                }
-                return setFocus(editorRef.current, { focus, moveCursorToEnd })
-            },
-            appendText(text: string): Promise<void> {
-                if (!editorRef.current) {
-                    return Promise.resolve()
-                }
-                return appendText(editorRef.current, text)
-            },
-            openAtMentionMenu() {
-                const editor = editorRef.current
-                if (!editor) {
-                    return Promise.resolve()
-                }
-
-                if (toSerializedPromptEditorValue(editor).text.trim().endsWith('@')) {
-                    return setFocus(editor, { focus: true, moveCursorToEnd: true })
-                }
-                return appendText(editorRef.current, '@')
-            },
-            filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void> {
-                if (!editorRef.current) {
-                    return Promise.resolve()
-                }
-
-                return update(editorRef.current, () => {
-                    let updated = false
-                    walkContextItemMentionNodes($getRoot(), node => {
-                        if (!filter(node.contextItem)) {
-                            node.remove()
-                            updated = true
-                        }
-                    })
-                    return updated
-                })
-            },
-            async addMentions(
-                items: ContextItem[],
-                position: 'before' | 'after' = 'after',
-                sep = ' '
-            ): Promise<void> {
-                const editor = editorRef.current
-                if (!editor) {
-                    return
-                }
-
-                const newContextItems = items.map(serializeContextItem)
-                const existingMentions = getContextItemsForEditor(editor)
-                const ops = getMentionOperations(existingMentions, newContextItems)
-
-                await update(editor, () => {
-                    if (ops.modify.size + ops.delete.size === 0) {
-                        return false
+                    const currentEditorState = normalizeEditorStateJSON(editor.getEditorState().toJSON())
+                    const newEditorState = initialEditorState.lexicalEditorState
+                    if (!isEqual(currentEditorState, newEditorState)) {
+                        editor.setEditorState(editor.parseEditorState(newEditorState))
                     }
-
-                    walkContextItemMentionNodes($getRoot(), existing => {
-                        const update = ops.modify.get(existing.contextItem)
-                        if (update) {
-                            // replace the existing mention inline with the new one
-                            existing.replace($createContextItemMentionNode(update))
-                        }
-                        if (ops.delete.has(existing.contextItem)) {
-                            existing.remove()
-                        }
-                    })
-                    return true
-                })
-
-                return update(editor, () => {
-                    if (ops.create.length === 0) {
-                        return false
-                    }
-
-                    $insertMentions(ops.create, position, sep)
-                    $selectEnd()
-                    return true
-                })
-            },
-            async upsertMentions(
-                items,
-                position = 'after',
-                sep = ' ',
-                focusEditor = true
-            ): Promise<void> {
-                const editor = editorRef.current
-                if (!editor) {
-                    return
-                }
-
-                const existingMentions = new Set(
-                    getContextItemsForEditor(editor).map(getKeyForContextItem)
-                )
-                const toUpdate = new Map<string, ContextItem>()
-                for (const item of items) {
-                    const key = getKeyForContextItem(item)
-                    if (existingMentions.has(key)) {
-                        toUpdate.set(key, item)
-                    }
-                }
-
-                await update(editor, () => {
-                    if (toUpdate.size === 0) {
-                        return false
-                    }
-
-                    walkContextItemMentionNodes($getRoot(), existing => {
-                        const update = toUpdate.get(getKeyForContextItem(existing.contextItem))
-                        if (update) {
-                            // replace the existing mention inline with the new one
-                            existing.replace($createContextItemMentionNode(update))
-                        }
-                    })
-                    if (focusEditor) {
-                        $selectEnd()
-                    } else {
-                        // Workaround for preventing the editor from stealing focus
-                        // (https://github.com/facebook/lexical/issues/2636#issuecomment-1184418601)
-                        // We need this until we can use the new 'skip-dom-selection' tag as
-                        // explained in https://lexical.dev/docs/concepts/selection#focus, introduced
-                        // by https://github.com/facebook/lexical/pull/6894
-                        $setSelection(null)
-                    }
-                    return true
-                })
-                return update(editor, () => {
-                    if (items.length === toUpdate.size) {
-                        return false
-                    }
-                    $insertMentions(
-                        items.filter(item => !toUpdate.has(getKeyForContextItem(item))),
-                        position,
-                        sep
-                    )
-                    if (focusEditor) {
-                        $selectEnd()
-                    } else {
-                        // Workaround for preventing the editor from stealing focus
-                        // (https://github.com/facebook/lexical/issues/2636#issuecomment-1184418601)
-                        // We need this until we can use the new 'skip-dom-selection' tag as
-                        // explained in https://lexical.dev/docs/concepts/selection#focus, introduced
-                        // by https://github.com/facebook/lexical/pull/6894
-                        $setSelection(null)
-                    }
-                    return true
-                })
-            },
-            setInitialContextMentions(items: ContextItem[]): Promise<void> {
-                const editor = editorRef.current
-                if (!editor) {
-                    return Promise.resolve()
-                }
-
-                return update(editor, () => {
-                    let updated = false
-
-                    if (!hasSetInitialContext.current || isEditorContentOnlyInitialContext(editor)) {
-                        if (isEditorContentOnlyInitialContext(editor)) {
-                            // Only clear in this case so that we don't clobber any text that was
-                            // inserted before initial context was received.
-                            $getRoot().clear()
-                            updated = true
-                        }
-                        const nodesToInsert = lexicalNodesForContextItems(items, {
-                            isFromInitialContext: true,
-                        })
-
-                        // Add whitespace after initial context items chips
-                        if (items.length > 0) {
-                            nodesToInsert.push($createTextNode(' '))
-                            updated = true
-                        }
-
-                        $setSelection($getRoot().selectStart()) // insert at start
-                        $insertNodes(nodesToInsert)
-                        $selectEnd()
-                        hasSetInitialContext.current = true
-                    }
-
-                    return updated
-                })
-            },
-        }),
-        []
-    )
-
-    useSetGlobalPromptEditorConfig()
-
-    const onBaseEditorChange = useCallback(
-        (_editorState: EditorState, editor: LexicalEditor): void => {
-            if (onChange) {
-                onChange(toSerializedPromptEditorValue(editor))
-            }
-        },
-        [onChange]
-    )
-
-    useEffect(() => {
-        if (initialEditorState) {
-            const editor = editorRef.current
-            if (editor) {
-                const currentEditorState = normalizeEditorStateJSON(editor.getEditorState().toJSON())
-                const newEditorState = initialEditorState.lexicalEditorState
-                if (!isEqual(currentEditorState, newEditorState)) {
-                    editor.setEditorState(editor.parseEditorState(newEditorState))
                 }
             }
-        }
-    }, [initialEditorState])
-    return (
-        <BaseEditor
-            className={clsx(styles.editor, editorClassName, {
-                [styles.disabled]: disabled,
-                [styles.seamless]: seamless,
-            })}
-            contentEditableClassName={contentEditableClassName}
-            initialEditorState={initialEditorState?.lexicalEditorState ?? null}
-            onChange={onBaseEditorChange}
-            onFocusChange={onFocusChange}
-            contextWindowSizeInTokens={contextWindowSizeInTokens}
-            editorRef={editorRef}
-            placeholder={placeholder}
-            disabled={disabled}
-            aria-label="Chat message"
-            onEnterKey={onEnterKey}
-            openExternalLink={openExternalLink}
-        />
-    )
-}
+        }, [initialEditorState])
+        return (
+            <BaseEditor
+                className={clsx(styles.editor, editorClassName, {
+                    [styles.disabled]: disabled,
+                    [styles.seamless]: seamless,
+                })}
+                contentEditableClassName={contentEditableClassName}
+                initialEditorState={initialEditorState?.lexicalEditorState ?? null}
+                onChange={onBaseEditorChange}
+                onFocusChange={onFocusChange}
+                contextWindowSizeInTokens={contextWindowSizeInTokens}
+                editorRef={editorRef}
+                placeholder={placeholder}
+                disabled={disabled}
+                aria-label="Chat message"
+                onEnterKey={onEnterKey}
+                openExternalLink={openExternalLink}
+            />
+        )
+    },
+    isEqual
+)
 
 function appendText(editor: LexicalEditor, text: string): Promise<void> {
     return update(editor, () => {

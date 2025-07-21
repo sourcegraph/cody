@@ -39,7 +39,6 @@ export const AssistantMessageCell: FunctionComponent<{
     humanMessage: PriorHumanMessageInfo | null
 
     userInfo: UserAccountInfo
-    chatEnabled: boolean
     isLoading: boolean
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
@@ -54,7 +53,6 @@ export const AssistantMessageCell: FunctionComponent<{
 
     postMessage?: ApiPostMessage
     guardrails: Guardrails
-    isLastSentInteraction: boolean
 }> = memo(
     ({
         message,
@@ -69,7 +67,6 @@ export const AssistantMessageCell: FunctionComponent<{
         postMessage,
         guardrails,
         smartApply,
-        isLastSentInteraction: isLastInteraction,
         isThoughtProcessOpened,
         setThoughtProcessOpened,
     }) => {
@@ -79,9 +76,7 @@ export const AssistantMessageCell: FunctionComponent<{
         )
         const chatModel = useChatModelByID(message.model, models)
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
-
         const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
-
         const messageIntent = humanMessage?.intent ?? message.intent ?? 'chat'
         const isSearchIntent = messageIntent === 'search'
 

@@ -53,6 +53,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const dispatchClientAction = useClientActionDispatcher()
 
     const clientConfigAttribution = clientConfig?.attribution ?? 'none'
+
     const guardrails = useMemo(() => {
         return createGuardrailsImpl(clientConfigAttribution, (snippet: string) => {
             vscodeAPI.postMessage({

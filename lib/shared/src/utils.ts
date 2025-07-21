@@ -1,3 +1,4 @@
+import isEqual from 'lodash/isEqual'
 import { logError } from './logger'
 
 type PromiseResolverFn<T, E> = (value?: T, err?: E) => void
@@ -186,4 +187,22 @@ export type PartialDeep<T> = {
         : T[P] extends object
           ? PartialDeep<T[P]>
           : T[P]
+}
+
+export function memoize<T extends (...args: any[]) => any>(
+    func: T
+): (...args: Parameters<T>) => ReturnType<T> {
+    let lastArguments: any[] | null = null
+    let lastCalculatedValue: ReturnType<T> | null = null
+
+    return (...args: Parameters<T>): ReturnType<T> => {
+        if (isEqual(lastArguments, args)) {
+            return lastCalculatedValue as ReturnType<T>
+        }
+
+        lastArguments = args
+        lastCalculatedValue = func(args)
+
+        return lastCalculatedValue as ReturnType<T>
+    }
 }

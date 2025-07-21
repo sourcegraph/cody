@@ -61,7 +61,6 @@ export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherP
     }
 
     const messageJSON = JSON.stringify(message)
-
     const initialEditorState = useMemo(
         () => serializedPromptEditorStateFromChatMessage(JSON.parse(messageJSON)),
         [messageJSON]

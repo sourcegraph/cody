@@ -5,6 +5,7 @@ import {
     type CodyNotice,
     FeatureFlag,
     type Guardrails,
+    type Model,
     type UserProductSubscription,
     type WebviewToExtensionAPI,
     firstValueFrom,
@@ -27,6 +28,8 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { useUserAccountInfo } from './utils/useConfig'
 import { useFeatureFlag } from './utils/useFeatureFlags'
 import { TabViewContext } from './utils/useTabView'
+
+const DEFAULT_CHAT_MODELS: Model[] = []
 
 interface CodyPanelProps {
     view: View
@@ -93,11 +96,13 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
             [api.mcpSettings]
         )
     )
-    // workspace upgrade eligibility should be that the flag is set, is on dotcom and only has one account. This prevents enterprise customers that are logged into multiple endpoints from seeing the CTA
+    // Workspace upgrade eligibility should be that the flag is set, is on dotcom and only has one account.
+    // This prevents enterprise customers that are logged into multiple endpoints from seeing the CTA
     const isWorkspacesUpgradeCtaEnabled =
         useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA) &&
         isDotComUser &&
         config.endpointHistory?.length === 1
+
     useEffect(() => {
         onExternalApiReady?.(externalAPI)
     }, [onExternalApiReady, externalAPI])
@@ -162,13 +167,10 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             messageInProgress={messageInProgress}
                             transcript={transcript}
                             tokenUsage={tokenUsage}
-                            models={chatModels || []}
+                            models={chatModels || DEFAULT_CHAT_MODELS}
                             vscodeAPI={vscodeAPI}
                             guardrails={guardrails}
                             showIDESnippetActions={showIDESnippetActions}
-                            showWelcomeMessage={showWelcomeMessage}
-                            setView={setView}
-                            isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
                         />
                     )}
                     {view === View.History && (

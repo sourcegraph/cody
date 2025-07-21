@@ -15,7 +15,6 @@ import type {
 import styles from './Chat.module.css'
 import { Transcript } from './chat/Transcript'
 
-import type { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { SpanManager } from './utils/spanManager'
 import { getTraceparentFromSpanContext } from './utils/telemetry'
@@ -36,10 +35,7 @@ interface ChatboxProps {
     models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     guardrails: Guardrails
-    showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
-    setView: (view: View) => void
-    isWorkspacesUpgradeCtaEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -50,10 +46,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     vscodeAPI,
     chatEnabled = true,
     guardrails,
-    showWelcomeMessage = true,
     showIDESnippetActions = true,
-    setView,
-    isWorkspacesUpgradeCtaEnabled,
 }) => {
     const transcriptRef = useRef(transcript)
     transcriptRef.current = transcript
