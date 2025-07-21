@@ -9,11 +9,9 @@ import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.protocol_extensions.toBoundedOffset
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.CreateFileOperation
-import com.sourcegraph.cody.agent.protocol_generated.DeleteFileOperation
 import com.sourcegraph.cody.agent.protocol_generated.DeleteTextEdit
 import com.sourcegraph.cody.agent.protocol_generated.EditFileOperation
 import com.sourcegraph.cody.agent.protocol_generated.InsertTextEdit
-import com.sourcegraph.cody.agent.protocol_generated.RenameFileOperation
 import com.sourcegraph.cody.agent.protocol_generated.ReplaceTextEdit
 import com.sourcegraph.cody.agent.protocol_generated.TextEdit
 import com.sourcegraph.cody.agent.protocol_generated.WorkspaceEditParams
@@ -68,7 +66,6 @@ class EditService(val project: Project) {
 
   fun performWorkspaceEdit(workspaceEditParams: WorkspaceEditParams): Boolean {
     return workspaceEditParams.operations.all { op ->
-      // TODO: We need to support the file-level operations.
       when (op) {
         is CreateFileOperation -> {
           logger.info("Workspace edit operation created a file: ${op.uri}")
@@ -79,14 +76,6 @@ class EditService(val project: Project) {
                   content = op.textContents,
                   overwrite = op.options?.overwrite ?: false)
           file != null
-        }
-        is RenameFileOperation -> {
-          logger.warn("Workspace edit operation renamed a file: ${op.oldUri} -> ${op.newUri}")
-          false
-        }
-        is DeleteFileOperation -> {
-          logger.warn("Workspace edit operation deleted a file: ${op.uri}")
-          false
         }
         is EditFileOperation -> {
           logger.info("Applying workspace edit to a file: ${op.uri}")

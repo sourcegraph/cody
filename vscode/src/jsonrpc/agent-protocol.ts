@@ -835,11 +835,7 @@ export interface WorkspaceEditParams {
     metadata?: vscode.WorkspaceEditMetadata | undefined | null
 }
 
-export type WorkspaceEditOperation =
-    | CreateFileOperation
-    | RenameFileOperation
-    | DeleteFileOperation
-    | EditFileOperation
+export type WorkspaceEditOperation = CreateFileOperation | EditFileOperation
 
 export interface WriteFileOptions {
     overwrite?: boolean | undefined | null
@@ -853,37 +849,11 @@ export interface CreateFileOperation {
     textContents: string
     metadata?: vscode.WorkspaceEditEntryMetadata | undefined | null
 }
-export interface RenameFileOperation {
-    type: 'rename-file'
-    oldUri: string
-    newUri: string
-    options?: WriteFileOptions | undefined | null
-    metadata?: vscode.WorkspaceEditEntryMetadata | undefined | null
-}
-export interface DeleteFileOperation {
-    type: 'delete-file'
-    uri: string
-    deleteOptions?:
-        | {
-              readonly recursive?: boolean | undefined | null
-              readonly ignoreIfNotExists?: boolean | undefined | null
-          }
-        | undefined
-        | null
-    metadata?: vscode.WorkspaceEditEntryMetadata | undefined | null
-}
 export interface EditFileOperation {
     type: 'edit-file'
     uri: string
     edits: TextEdit[]
 }
-
-export interface UntitledTextDocument {
-    uri: string
-    content?: string | undefined | null
-    language?: string | undefined | null
-}
-
 export interface TextDocumentEditParams {
     uri: string
     edits: TextEdit[]
@@ -1029,12 +999,6 @@ export interface GetFoldingRangeParams {
 export interface GetFoldingRangeResult {
     range: Range
 }
-
-export interface RemoteRepoFetchState {
-    state: 'paused' | 'fetching' | 'errored' | 'complete'
-    error?: CodyError | undefined | null
-}
-
 // Copy-pasted from @types/node
 export interface MemoryUsage {
     rss: number
