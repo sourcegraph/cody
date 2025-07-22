@@ -415,6 +415,9 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             guardrails={guardrails}
                             configuration={config}
                             chatEnabled={true}
+                            chatCodeHighlightingEnabled={
+                                clientConfig?.chatCodeHighlightingEnabled ?? true
+                            }
                             instanceNotices={clientConfig?.notices ?? []}
                             showWelcomeMessage={true}
                             showIDESnippetActions={false}

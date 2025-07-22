@@ -25,6 +25,7 @@ const meta: Meta<typeof Chat> = {
         transcript: FIXTURE_TRANSCRIPT.simple2,
         messageInProgress: null,
         chatEnabled: true,
+        chatCodeHighlightingEnabled: true,
         vscodeAPI: {
             postMessage: () => {},
             onMessage: () => () => {},

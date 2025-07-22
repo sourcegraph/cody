@@ -39,6 +39,9 @@ export interface CodyClientConfig {
     // Whether the site admin allows this user to make use of the Cody chat feature.
     chatEnabled: boolean
 
+    // Whether code snippets in the Cody chat should be highlighted.
+    chatCodeHighlightingEnabled?: boolean
+
     // Whether the site admin allows this user to make use of the Cody autocomplete feature.
     autoCompleteEnabled: boolean
 
@@ -95,6 +98,7 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     siteVersion: undefined,
     omniBoxEnabled: false,
     codeSearchEnabled: false,
+    chatCodeHighlightingEnabled: true,
 }
 
 /**
@@ -248,6 +252,9 @@ export class ClientConfigSingleton {
                                 message: notice?.message ?? '',
                             })
                         )
+
+                        config.chatCodeHighlightingEnabled =
+                            viewerSettings?.['cody.chatCodeSyntaxHighlightingEnabled'] ?? true
                     }
 
                     return config

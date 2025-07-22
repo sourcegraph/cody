@@ -10,6 +10,7 @@ import { graphqlClient } from './graphql/client'
 
 const CLIENT_CONFIG_FIXTURE: CodyClientConfig = {
     chatEnabled: true,
+    chatCodeHighlightingEnabled: true,
     autoCompleteEnabled: true,
     customCommandsEnabled: true,
     attributionEnabled: false,
@@ -300,6 +301,7 @@ describe('ClientConfigSingleton', () => {
         const fixture2: CodyClientConfig = {
             ...CLIENT_CONFIG_FIXTURE,
             chatEnabled: !CLIENT_CONFIG_FIXTURE.chatEnabled,
+            chatCodeHighlightingEnabled: CLIENT_CONFIG_FIXTURE.chatCodeHighlightingEnabled,
         }
         fetchHTTPMock.mockResolvedValue(fixture2)
         authStatusSubject.next({ ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: 'https://other.example.com' })

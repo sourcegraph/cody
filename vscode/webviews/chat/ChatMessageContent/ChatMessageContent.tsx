@@ -45,6 +45,7 @@ interface ChatMessageContentProps {
     setThoughtProcessOpened?: (open: boolean) => void
 
     guardrails: Guardrails
+    chatCodeHighlightingEnabled?: boolean
     className?: string
 }
 
@@ -61,6 +62,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         onRegenerate,
         regeneratingCodeBlocks,
         guardrails,
+        chatCodeHighlightingEnabled,
         className,
         smartApply,
         isThoughtProcessOpened,
@@ -122,6 +124,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     smartApply={smartApply}
                     className={clsx(styles.content, className)}
                     hasEditIntent={humanMessage?.intent === 'edit'}
+                    chatCodeHighlightingEnabled={chatCodeHighlightingEnabled}
                 />
             </div>
         )

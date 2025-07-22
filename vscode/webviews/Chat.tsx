@@ -23,6 +23,7 @@ import { useUserAccountInfo } from './utils/useConfig'
 
 interface ChatboxProps {
     chatEnabled: boolean
+    chatCodeHighlightingEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     tokenUsage?:
@@ -49,6 +50,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     models,
     vscodeAPI,
     chatEnabled = true,
+    chatCodeHighlightingEnabled = true,
     guardrails,
     showWelcomeMessage = true,
     showIDESnippetActions = true,
@@ -217,6 +219,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 smartApply={smartApply}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
+                chatCodeHighlightingEnabled={chatCodeHighlightingEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
