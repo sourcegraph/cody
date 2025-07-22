@@ -29,7 +29,6 @@ import {
     type SourcegraphGuardrailsClient,
     addMessageListenersForExtensionAPI,
     authStatus,
-    cenv,
     clientCapabilities,
     createMessageAPIForExtension,
     currentAuthStatus,
@@ -130,7 +129,6 @@ import { getEmptyOrDefaultContextObservable } from '../initialContext'
 import type {
     ConfigurationSubsetForWebview,
     ExtensionMessage,
-    LocalEnv,
     SmartApplyResult,
     WebviewMessage,
 } from '../protocol'
@@ -674,7 +672,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.extensionClient.capabilities?.edit === 'enabled'
     }
 
-    private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
+    private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview> {
         const { configuration, auth } = await currentResolvedConfig()
         const [experimentalPromptEditorEnabled, internalAgentModeEnabled] = await Promise.all([
             firstValueFrom(
@@ -688,13 +686,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
-        const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         const endpoints = localStorage.getEndpointHistory() ?? []
         const attribution =
             (await ClientConfigSingleton.getInstance().getConfig())?.attribution ?? GuardrailsMode.Off
 
         return {
-            uiKindIsWeb,
             serverEndpoint: auth.serverEndpoint,
             endpointHistory: [...endpoints],
             experimentalNoodle: configuration.experimentalNoodle,

@@ -10,21 +10,16 @@ import {
 
 import signInLogoSourcegraph from '../resources/sourcegraph-mark.svg'
 import { type AuthMethod, isSourcegraphToken } from '../src/chat/protocol'
-import signInLogoGitHub from './sign-in-logo-github.svg'
-import signInLogoGitLab from './sign-in-logo-gitlab.svg'
-import signInLogoGoogle from './sign-in-logo-google.svg'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
-import { ArrowLeftIcon, ArrowRightIcon, ChevronsUpDownIcon, LogInIcon, UsersIcon } from 'lucide-react'
+import { ArrowRightIcon, ChevronsUpDownIcon, LogInIcon, UsersIcon } from 'lucide-react'
 import { memo, useCallback, useMemo, useState } from 'react'
-import { isPlgEsAccessDisabled } from '../src/utils/plg-es-access'
 import { Button } from './components/shadcn/ui/button'
 import { Form, FormControl, FormField, FormLabel, FormMessage } from './components/shadcn/ui/form'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface LoginProps {
     simplifiedLoginRedirect: (method: AuthMethod) => void
-    uiKindIsWeb: boolean
     vscodeAPI: VSCodeWrapper
     codyIDE: CodyIDE
     endpoints: string[]
@@ -44,17 +39,12 @@ interface SignInButtonProps {
  * A component that shows the available ways for the user to sign in or sign up.
  */
 export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>> = ({
-    simplifiedLoginRedirect,
-    uiKindIsWeb,
     vscodeAPI,
     authStatus,
     allowEndpointChange,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
-    const plgEsAccessDisabled = isPlgEsAccessDisabled()
-    const [isEnterpriseSignin, setIsEnterpriseSignin] = useState(
-        !allowEndpointChange || plgEsAccessDisabled
-    )
+    const [isEnterpriseSignin, setIsEnterpriseSignin] = useState(true)
 
     // Extracted common button props and styles
     const commonButtonProps = {
@@ -86,14 +76,6 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
         telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
     }, [telemetryRecorder])
 
-    const handleProviderSignIn = useCallback(
-        (provider: AuthMethod) => {
-            telemetryRecorder.recordEvent('cody.webview.auth', `simplifiedSignIn${provider}Click`)
-            simplifiedLoginRedirect(provider)
-        },
-        [telemetryRecorder, simplifiedLoginRedirect]
-    )
-
     const signInButtons = useMemo(
         () => ({
             url: (
@@ -105,35 +87,8 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                     title="Sign in to your Sourcegraph instance"
                 />
             ),
-            github: (
-                <SignInButton
-                    logo={signInLogoGitHub}
-                    alt="GitHub logo"
-                    provider="GitHub"
-                    onClick={() => handleProviderSignIn('github')}
-                    title="Sign in with GitHub"
-                />
-            ),
-            gitlab: (
-                <SignInButton
-                    logo={signInLogoGitLab}
-                    alt="GitLab logo"
-                    provider="GitLab"
-                    onClick={() => handleProviderSignIn('gitlab')}
-                    title="Sign in with GitLab"
-                />
-            ),
-            google: (
-                <SignInButton
-                    logo={signInLogoGoogle}
-                    alt="Google logo"
-                    provider="Google"
-                    onClick={() => handleProviderSignIn('google')}
-                    title="Sign in with Google"
-                />
-            ),
         }),
-        [SignInButton, handleEnterpriseSignin, handleProviderSignIn]
+        [SignInButton, handleEnterpriseSignin]
     )
 
     // Memoized section components
@@ -141,29 +96,17 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
         () => (
             <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-w-full tw-max-w-md">
                 <div className="tw-font-semibold tw-text-md tw-my-4 tw-text-muted-foreground">
-                    {allowEndpointChange && !plgEsAccessDisabled && (
-                        <Button
-                            onClick={() => setIsEnterpriseSignin(false)}
-                            className="tw-flex tw-justify-between"
-                            variant="ghost"
-                            title="Back to sign-in options list"
-                        >
-                            <ArrowLeftIcon className="tw-mr-3" size={16} />
-                            Back
-                        </Button>
-                    )}
                     <ClientSignInForm
                         authStatus={authStatus}
                         vscodeAPI={vscodeAPI}
                         className="tw-mt-8"
                         telemetryRecorder={telemetryRecorder}
                         allowEndpointChange={allowEndpointChange}
-                        isPlgEsAccessDisabled={plgEsAccessDisabled}
                     />
                 </div>
             </section>
         ),
-        [authStatus, vscodeAPI, telemetryRecorder, allowEndpointChange, plgEsAccessDisabled]
+        [authStatus, vscodeAPI, telemetryRecorder, allowEndpointChange]
     )
 
     return (
@@ -194,28 +137,6 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                                 {signInButtons.url}
                             </div>
                         </section>
-
-                        {/* Free/Pro section */}
-                        <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-w-full tw-max-w-md tw-mt-8">
-                            <div className="tw-font-semibold tw-text-md tw-my-4 tw-text-muted-foreground">
-                                Free <span className="tw-font-normal">or</span> Pro
-                            </div>
-                            <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
-                                {uiKindIsWeb ? (
-                                    <WebLogin
-                                        telemetryRecorder={telemetryRecorder}
-                                        vscodeAPI={vscodeAPI}
-                                        isCodyWeb={uiKindIsWeb}
-                                    />
-                                ) : (
-                                    <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
-                                        {signInButtons.github}
-                                        {signInButtons.gitlab}
-                                        {signInButtons.google}
-                                    </div>
-                                )}
-                            </div>
-                        </section>
                     </div>
                 )}
             </div>
@@ -237,70 +158,19 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
         </div>
     )
 }
-
-const WebLogin: React.FunctionComponent<
-    React.PropsWithoutRef<{
-        isCodyWeb: boolean
-        telemetryRecorder: TelemetryRecorder
-        vscodeAPI: VSCodeWrapper
-    }>
-> = ({ vscodeAPI, isCodyWeb }) => {
-    const telemetryRecorder = useTelemetryRecorder()
-    return (
-        <ol>
-            <li>
-                <a href="https://sourcegraph.com/sign-up" target="site">
-                    Sign Up at Sourcegraph.com
-                </a>
-            </li>
-            <li>
-                <a href="https://sourcegraph.com/user/settings/tokens" target="site">
-                    Generate an Access Token
-                </a>
-            </li>
-            {isCodyWeb && (
-                <li>
-                    <a
-                        href="about:blank"
-                        onClick={event => {
-                            telemetryRecorder.recordEvent('cody.webview.auth', 'clickSignIn')
-                            vscodeAPI.postMessage({
-                                command: 'simplified-onboarding',
-                                onboardingKind: 'web-sign-in-token',
-                            })
-                            event.preventDefault()
-                            event.stopPropagation()
-                        }}
-                    >
-                        Add Access Token to Cody
-                    </a>
-                </li>
-            )}
-        </ol>
-    )
-}
-
 interface ClientSignInFormProps {
     vscodeAPI: VSCodeWrapper
     telemetryRecorder: TelemetryRecorder
     allowEndpointChange: boolean
     authStatus?: AuthStatus
     className?: string
-    isPlgEsAccessDisabled?: boolean
 }
 
 /**
  * The form allows users to input their Sourcegraph instance URL and access token manually.
  */
 const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
-    ({
-        className,
-        authStatus,
-        vscodeAPI,
-        telemetryRecorder,
-        allowEndpointChange,
-        isPlgEsAccessDisabled,
-    }) => {
+    ({ className, authStatus, vscodeAPI, telemetryRecorder, allowEndpointChange }) => {
         // Combine related state into a single object to reduce re-renders
         const [formState, setFormState] = useState({
             showAccessTokenField: false,
@@ -314,26 +184,22 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
         })
 
         // Validation function for URL based on feature flag
-        const validateEndpointUrl = useCallback(
-            (url: string): string | null => {
-                if (!url) return null
+        const validateEndpointUrl = (url: string): string | null => {
+            if (!url) return null
 
-                try {
-                    const urlObj = new URL(url)
-                    if (
-                        isPlgEsAccessDisabled &&
-                        (isDotCom({ endpoint: urlObj.href }) ||
-                            isWorkspaceInstance({ endpoint: urlObj.href }))
-                    ) {
-                        return 'This instance does not have access to Cody'
-                    }
-                    return null
-                } catch {
-                    return 'Invalid URL format'
+            try {
+                const urlObj = new URL(url)
+                if (
+                    isDotCom({ endpoint: urlObj.href }) ||
+                    isWorkspaceInstance({ endpoint: urlObj.href })
+                ) {
+                    return 'This instance does not have access to Cody'
                 }
-            },
-            [isPlgEsAccessDisabled]
-        )
+                return null
+            } catch {
+                return 'Invalid URL format'
+            }
+        }
 
         // Memoize handlers to prevent unnecessary re-creations
         const handleInputChange = useCallback(

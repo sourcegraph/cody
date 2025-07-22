@@ -188,7 +188,7 @@ export interface SmartApplyResult {
 export type ExtensionMessage =
     | {
           type: 'config'
-          config: ConfigurationSubsetForWebview & LocalEnv
+          config: ConfigurationSubsetForWebview
           clientCapabilities: ClientCapabilitiesWithLegacyFields
           authStatus: AuthStatus
           userProductSubscription?: UserProductSubscription | null | undefined
@@ -331,12 +331,6 @@ export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
-
-/** The local environment of the editor. */
-export interface LocalEnv {
-    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
-    uiKindIsWeb: boolean
-}
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 
