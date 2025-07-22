@@ -132,23 +132,11 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          authKind:
-              | 'signin'
-              | 'signout'
-              | 'support'
-              | 'callback'
-              | 'simplified-onboarding'
-              | 'switch'
-              | 'refresh'
+          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'switch' | 'refresh'
           endpoint?: string | undefined | null
           value?: string | undefined | null
-          authMethod?: AuthMethod | undefined | null
       }
     | { command: 'abort' }
-    | {
-          command: 'simplified-onboarding'
-          onboardingKind: 'web-sign-in-token'
-      }
     | {
           command: 'attribution-search'
           snippet: string
@@ -331,8 +319,6 @@ export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
-
-export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 
 // Provide backward compatibility for the old token regex
 // Details: https://docs.sourcegraph.com/dev/security/secret_formats

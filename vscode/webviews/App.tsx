@@ -1,4 +1,4 @@
-import { type ComponentProps, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ComponentProps, useEffect, useMemo, useState } from 'react'
 
 import {
     type ChatMessage,
@@ -8,7 +8,6 @@ import {
     type TelemetryRecorder,
     createGuardrailsImpl,
 } from '@sourcegraph/cody-shared'
-import type { AuthMethod } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { AuthPage } from './AuthPage'
 import { LoadingPage } from './LoadingPage'
@@ -147,20 +146,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         }
     }, [view, vscodeAPI])
 
-    const loginRedirect = useCallback(
-        (method: AuthMethod) => {
-            // We do not change the view here. We want to keep presenting the
-            // login buttons until we get a token so users don't get stuck if
-            // they close the browser during an auth flow.
-            vscodeAPI.postMessage({
-                command: 'auth',
-                authKind: 'simplified-onboarding',
-                authMethod: method,
-            })
-        },
-        [vscodeAPI]
-    )
-
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
@@ -202,7 +187,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         <AuthenticationErrorBanner errorMessage={config.authStatus.error} />
                     )}
                     <AuthPage
-                        simplifiedLoginRedirect={loginRedirect}
                         vscodeAPI={vscodeAPI}
                         codyIDE={config.clientCapabilities.agentIDE}
                         endpoints={config.config.endpointHistory ?? []}

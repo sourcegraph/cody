@@ -17,7 +17,6 @@ const meta: Meta<typeof AuthPage> = {
     component: AuthPage,
     decorators: [VSCodeWebview],
     args: {
-        simplifiedLoginRedirect: () => {},
         vscodeAPI: vscodeAPI,
         codyIDE: CodyIDE.VSCode,
     },

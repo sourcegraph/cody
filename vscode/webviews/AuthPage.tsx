@@ -9,7 +9,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import signInLogoSourcegraph from '../resources/sourcegraph-mark.svg'
-import { type AuthMethod, isSourcegraphToken } from '../src/chat/protocol'
+import { isSourcegraphToken } from '../src/chat/protocol'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { ArrowRightIcon, ChevronsUpDownIcon, LogInIcon, UsersIcon } from 'lucide-react'
@@ -19,7 +19,6 @@ import { Form, FormControl, FormField, FormLabel, FormMessage } from './componen
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface LoginProps {
-    simplifiedLoginRedirect: (method: AuthMethod) => void
     vscodeAPI: VSCodeWrapper
     codyIDE: CodyIDE
     endpoints: string[]
