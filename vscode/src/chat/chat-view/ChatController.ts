@@ -92,6 +92,7 @@ import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
+import { DeviceFlowAuthenticator } from '../../auth/oauth-device-flow'
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getCurrentUserId } from '../../auth/user'
 import { getContextFileFromUri } from '../../commands/context/file-path'
@@ -562,6 +563,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         if (!successfullyOpenedUrl) {
                             closeAuthProgressIndicator()
                         }
+                        break
+                    }
+                    if (message.authKind === 'device-flow' && message.endpoint) {
+                        // Handle OAuth device flow authentication
+                        await this.handleDeviceFlowAuth(message.endpoint)
                         break
                     }
                     if (
@@ -1397,6 +1403,78 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 snippet,
                 error: `${error}`,
             })
+        }
+    }
+
+    private async handleDeviceFlowAuth(endpoint: string): Promise<void> {
+        const deviceFlow = new DeviceFlowAuthenticator()
+
+        try {
+            startAuthProgressIndicator()
+
+            // Update the UI with progress
+            await this.postMessage({
+                type: 'device-flow-status',
+                status: 'starting',
+                message: 'Checking OAuth support...',
+            })
+
+            const result = await deviceFlow.authenticate(
+                endpoint,
+                (userCode, verificationUri) => {
+                    // Send device code to UI
+                    void this.postMessage({
+                        type: 'device-flow-status',
+                        status: 'code-ready',
+                        userCode,
+                        verificationUri,
+                    })
+                },
+                message => {
+                    // Send progress updates to UI
+                    void this.postMessage({
+                        type: 'device-flow-status',
+                        status: 'progress',
+                        message,
+                    })
+                }
+            )
+
+            closeAuthProgressIndicator()
+
+            // Store the OAuth token
+            const authCredentials: AuthCredentials = {
+                serverEndpoint: endpoint,
+                credentials: {
+                    token: result.accessToken,
+                    source: 'oauth-device-flow' as any,
+                },
+            }
+
+            await authProvider.validateAndStoreCredentials(authCredentials, 'always-store')
+
+            // Store refresh token separately if available
+            if (result.refreshToken) {
+                await secretStorage.store(`${endpoint}-refresh-token`, result.refreshToken)
+                await secretStorage.store(`${endpoint}-token-expires`, result.expiresAt.toISOString())
+            }
+
+            await this.postMessage({
+                type: 'device-flow-status',
+                status: 'success',
+                message: 'Authentication successful!',
+            })
+        } catch (error) {
+            closeAuthProgressIndicator()
+
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+            await this.postMessage({
+                type: 'device-flow-status',
+                status: 'error',
+                message: errorMessage,
+            })
+
+            logError('ChatController', 'Device flow authentication failed', error)
         }
     }
 

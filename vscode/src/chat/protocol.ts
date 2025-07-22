@@ -140,6 +140,7 @@ export type WebviewMessage =
               | 'simplified-onboarding'
               | 'switch'
               | 'refresh'
+              | 'device-flow'
           endpoint?: string | undefined | null
           value?: string | undefined | null
           authMethod?: AuthMethod | undefined | null
@@ -231,6 +232,7 @@ export type ExtensionMessage =
           mcpServerError?: { name: string; error: string } | undefined | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
+    | ({ type: 'device-flow-status' } & DeviceFlowStatusMessage)
     | { type: 'rpc/response'; message: ResponseMessage }
     | { type: 'action/confirmationRequest'; id: string; step: ProcessingStep }
 
@@ -244,6 +246,13 @@ interface ExtensionAttributionMessage {
         | undefined
         | null
     error?: string | undefined | null
+}
+
+interface DeviceFlowStatusMessage {
+    status: 'starting' | 'code-ready' | 'progress' | 'success' | 'error'
+    message?: string
+    userCode?: string
+    verificationUri?: string
 }
 
 export interface WebviewSubmitMessage extends WebviewContextMessage {
@@ -332,7 +341,7 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
 
-export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
+export type AuthMethod = 'dotcom' | 'device-flow' | 'github' | 'gitlab' | 'google'
 
 // Provide backward compatibility for the old token regex
 // Details: https://docs.sourcegraph.com/dev/security/secret_formats
