@@ -113,7 +113,6 @@ import { dumpCodyHeapSnapshot } from './services/utils/heap-dump'
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
-import { isPlgEsAccessDisabled } from './utils/plg-es-access'
 import { version } from './version'
 
 /**
@@ -333,16 +332,13 @@ const register = async (
         )
     )
 
-    // Handle PLG ES access disable logic
-    if (isPlgEsAccessDisabled()) {
-        const endpoints = localStorage.getEndpointHistory() || []
-        const endpointsToLogout = endpoints.filter(
-            endpoint => isDotCom({ endpoint }) || isWorkspaceInstance({ endpoint })
-        )
+    const endpoints = localStorage.getEndpointHistory() || []
+    const endpointsToLogout = endpoints.filter(
+        endpoint => isDotCom({ endpoint }) || isWorkspaceInstance({ endpoint })
+    )
 
-        // Logout from each dotcom and workspace endpoint
-        void Promise.all(endpointsToLogout.map(endpoint => signOut(endpoint)))
-    }
+    // Logout from each dotcom and workspace endpoint
+    void Promise.all(endpointsToLogout.map(endpoint => signOut(endpoint)))
 
     // Save config for `deactivate` handler.
     disposables.push(

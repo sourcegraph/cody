@@ -12,7 +12,7 @@ import {
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import type React from 'react'
 import { type FunctionComponent, useEffect, useMemo, useRef } from 'react'
-import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
+import type { ConfigurationSubsetForWebview } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
 import { StorageWarningBanner } from './chat/StorageWarningBanner'
@@ -32,7 +32,7 @@ interface CodyPanelProps {
     view: View
     setView: (view: View) => void
     configuration: {
-        config: LocalEnv & ConfigurationSubsetForWebview
+        config: ConfigurationSubsetForWebview
         clientCapabilities: ClientCapabilitiesWithLegacyFields
         authStatus: AuthStatus
         isDotComUser: boolean

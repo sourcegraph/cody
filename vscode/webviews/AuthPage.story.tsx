@@ -18,7 +18,6 @@ const meta: Meta<typeof AuthPage> = {
     decorators: [VSCodeWebview],
     args: {
         simplifiedLoginRedirect: () => {},
-        uiKindIsWeb: false,
         vscodeAPI: vscodeAPI,
         codyIDE: CodyIDE.VSCode,
     },
@@ -30,28 +29,24 @@ type Story = StoryObj<typeof AuthPage>
 
 export const VSCodeDesktop: Story = {
     args: {
-        uiKindIsWeb: false,
         codyIDE: CodyIDE.VSCode,
     },
 }
 
 export const VSCodeWeb: StoryObj<typeof AuthPage> = {
     args: {
-        uiKindIsWeb: true,
         codyIDE: CodyIDE.VSCode,
     },
 }
 
 export const SourcegraphWeb: StoryObj<typeof AuthPage> = {
     args: {
-        uiKindIsWeb: true,
         codyIDE: CodyIDE.Web,
     },
 }
 
 export const JetBrainsDesktop: StoryObj<typeof AuthPage> = {
     args: {
-        uiKindIsWeb: false,
         codyIDE: CodyIDE.JetBrains,
     },
 }

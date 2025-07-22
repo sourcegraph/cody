@@ -26,7 +26,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             type: 'config',
             config: {
                 serverEndpoint: 'https://example.com',
-                uiKindIsWeb: false,
                 experimentalNoodle: false,
                 smartApply: false,
                 hasEditCapability: false,
