@@ -9,14 +9,23 @@ import com.sourcegraph.cody.agent.protocol_generated.TextDocument_DidRenameParam
 
 class CodyElementListenerProvider : RefactoringElementListenerProvider {
   override fun getListener(element: PsiElement): RefactoringElementListener {
-    val uriBefore = vscNormalizedUriFor(element.containingFile.virtualFile)
+
     return object : RefactoringElementListener {
+      val uriBefore = getContainingFileUri(element)
+
       override fun elementMoved(newPsiElement: PsiElement) = notifyAgent(newPsiElement)
 
       override fun elementRenamed(newPsiElement: PsiElement) = notifyAgent(newPsiElement)
 
+      private fun getContainingFileUri(element: PsiElement): String? {
+        if (element.containingFile.virtualFile == null) {
+          return null
+        }
+        return vscNormalizedUriFor(element.containingFile.virtualFile)
+      }
+
       private fun notifyAgent(newPsiElement: PsiElement) {
-        val uriAfter = vscNormalizedUriFor(newPsiElement.containingFile.virtualFile)
+        val uriAfter = getContainingFileUri(newPsiElement)
         if (uriBefore == null || uriAfter == null || uriBefore == uriAfter) {
           return
         }
