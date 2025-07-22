@@ -1,3 +1,9 @@
+## 0.33.0
+- A lot of changes since 0.23.1 which haven't been documented well
+(please test new versions manually on the instance locally before publishing).
+- Adds a possible fix for the "Memory leak" problem (improvements in components memoization).
+- Adds a feature flag cody setting `cody.chatCodeSyntaxHighlightingEnabled` to disable code highlighting of chat code snippets. 
+
 ## 0.23.1
 - Support unicode characters in cody prompt templates @ mentions
 - Remove cody repository as default @ mention for prompt templates
