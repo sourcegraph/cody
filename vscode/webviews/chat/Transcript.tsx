@@ -53,6 +53,7 @@ interface TranscriptProps {
     activeChatContext?: Context
     setActiveChatContext: (context: Context | undefined) => void
     chatEnabled: boolean
+    chatCodeHighlightingEnabled: boolean
     transcript: ChatMessage[]
     tokenUsage?:
         | {
@@ -95,6 +96,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         activeChatContext,
         setActiveChatContext,
         chatEnabled,
+        chatCodeHighlightingEnabled,
         transcript,
         tokenUsage,
         models,
@@ -219,6 +221,7 @@ export const Transcript: FC<TranscriptProps> = props => {
                     tokenUsage={tokenUsage}
                     models={models}
                     chatEnabled={chatEnabled}
+                    chatCodeHighlightingEnabled={chatCodeHighlightingEnabled}
                     userInfo={userInfo}
                     guardrails={guardrails}
                     postMessage={postMessage}
@@ -250,6 +253,7 @@ export const Transcript: FC<TranscriptProps> = props => {
             tokenUsage,
             models,
             chatEnabled,
+            chatCodeHighlightingEnabled,
             userInfo,
             guardrails,
             postMessage,
@@ -400,6 +404,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         priorAssistantMessageIsLoading,
         userInfo,
         chatEnabled,
+        chatCodeHighlightingEnabled,
         postMessage,
         guardrails,
         insertButtonOnSubmit,
@@ -771,6 +776,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         userInfo={userInfo}
                         models={models}
                         chatEnabled={chatEnabled}
+                        chatCodeHighlightingEnabled={chatCodeHighlightingEnabled}
                         message={assistantMessage}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}

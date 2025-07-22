@@ -23,6 +23,7 @@ interface RichMarkdownProps {
     smartApply?: CodeBlockActionsProps['smartApply']
     className?: string
     hasEditIntent: boolean
+    chatCodeHighlightingEnabled?: boolean
 }
 
 interface TerminatedCodeData {
@@ -84,6 +85,7 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = memo(
         smartApply,
         className,
         hasEditIntent,
+        chatCodeHighlightingEnabled = true,
     }) => {
         // Memoize the extractText function to avoid recreating it every render
         const extractText = useCallback((node: any): string => {
@@ -175,6 +177,7 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = memo(
                 <MarkdownFromCody
                     components={components}
                     prefixRemarkPlugins={[remarkAttachCompletedCodeBlocks]}
+                    isHighlightingEnabled={chatCodeHighlightingEnabled}
                 >
                     {markdown}
                 </MarkdownFromCody>

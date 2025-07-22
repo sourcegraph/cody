@@ -18,6 +18,7 @@ const DEFAULT_SERVER_ENDPOINT = 'https://sourcegraph.sourcegraph.com'
 const serverEndpoint = localStorage.getItem('serverEndpoint') || DEFAULT_SERVER_ENDPOINT
 
 const accessTokenStorageKey = `accessToken:${serverEndpoint}`
+
 let accessToken = localStorage.getItem(accessTokenStorageKey)
 
 if (!accessToken) {

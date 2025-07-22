@@ -1,5 +1,5 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import type { ComponentProps, FunctionComponent } from 'react'
+import type { FunctionComponent } from 'react'
 import { useMemo } from 'react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
 import type { Components, UrlTransform } from 'react-markdown/lib'
@@ -103,83 +103,82 @@ const childrenTransform = (children: string): string => {
     return children.slice(0, lastIdx) + '````' + children.slice(lastIdx + 3)
 }
 
+const rehypeSanitizePlugin: Pluggable = [
+    rehypeSanitize,
+    {
+        ...defaultSchema,
+        tagNames: ALLOWED_ELEMENTS,
+        attributes: {
+            ...defaultSchema.attributes,
+            code: [
+                ...(defaultSchema.attributes?.code || []),
+                // Allow various metadata attributes for code blocks
+                ['data-file-path'],
+                ['data-is-code-complete'],
+                ['data-language'],
+                ['data-source-text'],
+                [
+                    'className',
+                    ...Object.keys(SYNTAX_HIGHLIGHTING_LANGUAGES).map(
+                        language => `language-${language}`
+                    ),
+                ],
+            ],
+        },
+    } satisfies RehypeSanitizeOptions,
+]
+
+const rehypeHighlightPlugin: Pluggable = [
+    // HACK(sqs): Need to use rehype-highlight@^6.0.0 to avoid a memory leak
+    // (https://github.com/remarkjs/react-markdown/issues/791), but the types are
+    // slightly off.
+    rehypeHighlight as any,
+    {
+        detect: true,
+        languages: {
+            ...SYNTAX_HIGHLIGHTING_LANGUAGES,
+        },
+
+        // `ignoreMissing: true` is required to avoid errors when trying to highlight
+        // partial code blocks received from the LLM that have (e.g.) "```p" for
+        // "```python". This is only needed on rehype-highlight@^6.0.0, which we needed
+        // to downgrade to in order to avoid a memory leak
+        // (https://github.com/remarkjs/react-markdown/issues/791).
+        ignoreMissing: true,
+    } satisfies RehypeHighlightOptions & { ignoreMissing: boolean },
+]
+
 export const MarkdownFromCody: FunctionComponent<{
     className?: string
     prefixRemarkPlugins?: Pluggable[]
     components?: Partial<Components>
+    isHighlightingEnabled?: boolean
     children: string
-}> = ({ className, prefixRemarkPlugins, components, children }) => {
+}> = ({ className, prefixRemarkPlugins, components, children, isHighlightingEnabled = true }) => {
     const clientType = useConfig().clientCapabilities.agentIDE
     const urlTransform = useMemo(() => URL_PROCESSORS[clientType] ?? defaultUrlProcessor, [clientType])
     const chatReplyTransformed = childrenTransform(children)
 
+    const remarkPlugins = useMemo(
+        () => [...(prefixRemarkPlugins ?? []), remarkGFM, remarkAttachFilePathToCodeBlocks],
+        [prefixRemarkPlugins]
+    )
+    const rehypePlugins = useMemo(() => {
+        const enableHighlighting = isHighlightingEnabled !== undefined ? isHighlightingEnabled : true
+        return enableHighlighting
+            ? [rehypeSanitizePlugin, rehypeHighlightPlugin]
+            : [rehypeSanitizePlugin]
+    }, [isHighlightingEnabled])
+
     return (
         <Markdown
             className={className}
-            {...markdownPluginProps(prefixRemarkPlugins ?? [])}
+            remarkPlugins={remarkPlugins}
+            rehypePlugins={rehypePlugins}
             urlTransform={urlTransform}
             components={components ?? {}}
         >
             {chatReplyTransformed}
         </Markdown>
     )
-}
-
-let _markdownPluginProps: ReturnType<typeof markdownPluginProps> | undefined
-function markdownPluginProps(
-    prefixRemarkPlugins: Pluggable[] = []
-): Pick<ComponentProps<typeof Markdown>, 'rehypePlugins' | 'remarkPlugins'> {
-    if (_markdownPluginProps) {
-        return _markdownPluginProps
-    }
-
-    _markdownPluginProps = {
-        rehypePlugins: [
-            [
-                rehypeSanitize,
-                {
-                    ...defaultSchema,
-                    tagNames: ALLOWED_ELEMENTS,
-                    attributes: {
-                        ...defaultSchema.attributes,
-                        code: [
-                            ...(defaultSchema.attributes?.code || []),
-                            // Allow various metadata attributes for code blocks
-                            ['data-file-path'],
-                            ['data-is-code-complete'],
-                            ['data-language'],
-                            ['data-source-text'],
-                            [
-                                'className',
-                                ...Object.keys(SYNTAX_HIGHLIGHTING_LANGUAGES).map(
-                                    language => `language-${language}`
-                                ),
-                            ],
-                        ],
-                    },
-                } satisfies RehypeSanitizeOptions,
-            ],
-            [
-                // HACK(sqs): Need to use rehype-highlight@^6.0.0 to avoid a memory leak
-                // (https://github.com/remarkjs/react-markdown/issues/791), but the types are
-                // slightly off.
-                rehypeHighlight as any,
-                {
-                    detect: true,
-                    languages: {
-                        ...SYNTAX_HIGHLIGHTING_LANGUAGES,
-                    },
-
-                    // `ignoreMissing: true` is required to avoid errors when trying to highlight
-                    // partial code blocks received from the LLM that have (e.g.) "```p" for
-                    // "```python". This is only needed on rehype-highlight@^6.0.0, which we needed
-                    // to downgrade to in order to avoid a memory leak
-                    // (https://github.com/remarkjs/react-markdown/issues/791).
-                    ignoreMissing: true,
-                } satisfies RehypeHighlightOptions & { ignoreMissing: boolean },
-            ],
-        ],
-        remarkPlugins: [...prefixRemarkPlugins, remarkGFM, remarkAttachFilePathToCodeBlocks],
-    }
-    return _markdownPluginProps
 }

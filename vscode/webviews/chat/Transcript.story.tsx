@@ -41,6 +41,7 @@ const meta: Meta<typeof Transcript> = {
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
         postMessage: () => {},
         chatEnabled: true,
+        chatCodeHighlightingEnabled: true,
         models: FIXTURE_MODELS,
         setActiveChatContext: () => {},
         guardrails: new MockNoGuardrails(),

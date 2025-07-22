@@ -40,6 +40,7 @@ export const AssistantMessageCell: FunctionComponent<{
 
     userInfo: UserAccountInfo
     chatEnabled: boolean
+    chatCodeHighlightingEnabled: boolean
     isLoading: boolean
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
@@ -61,6 +62,8 @@ export const AssistantMessageCell: FunctionComponent<{
         models,
         humanMessage,
         userInfo,
+        chatEnabled,
+        chatCodeHighlightingEnabled,
         isLoading,
         copyButtonOnSubmit,
         insertButtonOnSubmit,
@@ -112,6 +115,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 guardrails={guardrails}
                                 humanMessage={humanMessage}
                                 smartApply={smartApply}
+                                chatCodeHighlightingEnabled={chatCodeHighlightingEnabled}
                                 isThoughtProcessOpened={!!isThoughtProcessOpened}
                                 setThoughtProcessOpened={setThoughtProcessOpened}
                             />

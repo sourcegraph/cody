@@ -14,6 +14,7 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     insertButtonOnSubmit: () => {},
     userInfo: FIXTURE_USER_ACCOUNT_INFO,
     chatEnabled: true,
+    chatCodeHighlightingEnabled: true,
     postMessage: () => {},
     models: FIXTURE_MODELS,
     setActiveChatContext: () => {},

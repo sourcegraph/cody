@@ -40,6 +40,7 @@ interface CodyPanelProps {
     }
     errorMessages: string[]
     chatEnabled: boolean
+    chatCodeHighlightingEnabled: boolean
     instanceNotices: CodyNotice[]
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -70,6 +71,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     errorMessages,
     setErrorMessages,
     chatEnabled,
+    chatCodeHighlightingEnabled,
     instanceNotices,
     messageInProgress,
     transcript,
@@ -159,6 +161,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                     {view === View.Chat && (
                         <Chat
                             chatEnabled={chatEnabled}
+                            chatCodeHighlightingEnabled={chatCodeHighlightingEnabled}
                             messageInProgress={messageInProgress}
                             transcript={transcript}
                             tokenUsage={tokenUsage}

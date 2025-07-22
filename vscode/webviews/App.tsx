@@ -219,6 +219,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     errorMessages={errorMessages}
                     setErrorMessages={setErrorMessages}
                     chatEnabled={clientConfig?.chatEnabled ?? true}
+                    chatCodeHighlightingEnabled={clientConfig?.chatCodeHighlightingEnabled ?? true}
                     instanceNotices={clientConfig?.notices ?? []}
                     messageInProgress={messageInProgress}
                     transcript={transcript}
