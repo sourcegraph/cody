@@ -29,7 +29,6 @@ const meta: Meta<typeof Chat> = {
             postMessage: () => {},
             onMessage: () => () => {},
         },
-        setView: () => {},
         models: FIXTURE_MODELS,
         guardrails: new MockNoGuardrails(),
     } satisfies React.ComponentProps<typeof Chat>,

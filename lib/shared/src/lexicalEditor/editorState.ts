@@ -147,9 +147,9 @@ export function serializedPromptEditorStateFromText(text: string): SerializedPro
     }
 }
 
-export function serializedPromptEditorStateFromChatMessage(
+export const serializedPromptEditorStateFromChatMessage = (
     chatMessage: ChatMessage
-): SerializedPromptEditorState {
+): SerializedPromptEditorState => {
     function isCompatibleVersionEditorState(value: unknown): value is SerializedPromptEditorState {
         if (!value) {
             return false

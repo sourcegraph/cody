@@ -19,6 +19,7 @@ import type { SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import isEqual from 'lodash/isEqual'
 import {
     type FunctionComponent,
+    memo,
     useCallback,
     useContext,
     useEffect,
@@ -102,219 +103,239 @@ const hiddenProviders = [REMOTE_FILE_PROVIDER_URI, REMOTE_DIRECTORY_PROVIDER_URI
 /**
  * The component for composing and editing prompts.
  */
-export const PromptEditor: FunctionComponent<Props> = ({
-    editorClassName,
-    contentEditableClassName,
-    seamless,
-    placeholder,
-    initialEditorState,
-    onChange,
-    onFocusChange,
-    contextWindowSizeInTokens,
-    disabled,
-    editorRef: ref,
-    onEnterKey,
-    openExternalLink,
-}) => {
-    // We use the interaction ID to differentiate between different
-    // invocations of the mention-menu. That way upstream we don't trigger
-    // duplicate telemetry events for the same view
-    const interactionID = useRef(0)
-
-    const convertedInitialEditorState = useMemo(() => {
-        return initialEditorState
-            ? schema.nodeFromJSON(fromSerializedPromptEditorState(initialEditorState))
-            : undefined
-    }, [initialEditorState])
-
-    const defaultContext = useDefaultContextForChat()
-    const extensionAPI = useExtensionAPI()
-    const mentionMenuData = extensionAPI.mentionMenuData
-    const mentionSettings = useContext(ChatMentionContext)
-
-    const fetchMenuData = useCallback(
-        ({ query, provider }: { query: string; provider?: ContextMentionProviderMetadata }) => {
-            const initialContext = [...defaultContext.initialContext, ...defaultContext.corpusContext]
-            const queryLower = query.toLowerCase().trim()
-            const filteredInitialContextItems = provider
-                ? []
-                : queryLower
-                  ? initialContext.filter(item => item.title?.toLowerCase().startsWith(queryLower))
-                  : initialContext
-
-            // NOTE: It's important to only emit after we receive new mentions menu data.
-            // This ensures that we display the 'old' menu items until new have arrived
-            // and prevents the menu from 'flickering'.
-            return combineLatest(
-                mentionMenuData({
-                    ...parseMentionQuery(query, provider ?? null),
-                    interactionID: interactionID.current,
-                    contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
-                }),
-                extensionAPI.frequentlyUsedContextItems()
-            ).pipe(
-                map(([menuData, frequentlyUsedItems]) => {
-                    // Get user-provided context items, limited to max suggestions and marked as user source
-                    const items =
-                        menuData.items
-                            ?.slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
-                            .map((item: ContextItem) => ({ ...item, source: ContextItemSource.User })) ??
-                        []
-
-                    // Return early with just the items if a specific provider is selected
-                    if (provider) {
-                        return items
-                    }
-
-                    // Filter out any hidden context providers
-                    const providers = menuData.providers.filter(
-                        (provider: ContextMentionProviderMetadata) =>
-                            !hiddenProviders.includes(provider.id)
-                    )
-
-                    // With a query, show only matching items
-                    if (query) {
-                        return [...filteredInitialContextItems, ...providers, ...items]
-                    }
-
-                    // Filter out any frequently used items that are already in filteredInitialContextItems
-                    const uniqueFrequentlyUsedItems = frequentlyUsedItems
-                        .filter(
-                            frequentItem =>
-                                !filteredInitialContextItems.some(
-                                    initialItem =>
-                                        initialItem.uri.toString() === frequentItem.uri.toString()
-                                )
-                        )
-                        .slice(0, 3)
-
-                    // Without a query, include filtered frequently used items
-                    return [
-                        ...filteredInitialContextItems,
-                        ...uniqueFrequentlyUsedItems,
-                        ...providers,
-                        ...items,
-                    ]
-                })
-            )
-        },
-        [mentionMenuData, mentionSettings, defaultContext, extensionAPI.frequentlyUsedContextItems]
-    )
-
-    const [input, api] = usePromptInput({
+export const PromptEditor: FunctionComponent<Props> = memo(
+    ({
+        editorClassName,
+        contentEditableClassName,
+        seamless,
         placeholder,
-        initialDocument: convertedInitialEditorState,
-        disabled,
-        contextWindowSizeInTokens,
-        onChange: doc => {
-            onChange?.(toSerializedPromptEditorValue(doc))
-        },
+        initialEditorState,
+        onChange,
         onFocusChange,
+        contextWindowSizeInTokens,
+        disabled,
+        editorRef: ref,
         onEnterKey,
-        fetchMenuData,
         openExternalLink,
-    })
+    }) => {
+        // We use the interaction ID to differentiate between different
+        // invocations of the mention-menu. That way upstream we don't trigger
+        // duplicate telemetry events for the same view
+        const interactionID = useRef(0)
 
-    const { show, items, selectedIndex, query, position: menuPosition, parent } = useMentionsMenu(input)
+        const convertedInitialEditorState = useMemo(() => {
+            return initialEditorState
+                ? schema.nodeFromJSON(fromSerializedPromptEditorState(initialEditorState))
+                : undefined
+        }, [initialEditorState])
 
-    useLayoutEffect(() => {
-        // We increment the interaction ID when the menu is hidden because `fetchMenuData` can be
-        // called before the menu is shown, which would result in a different interaction ID for the
-        // first fetch.
-        if (!show) {
-            interactionID.current++
-        }
-    }, [show])
+        const defaultContext = useDefaultContextForChat()
+        const extensionAPI = useExtensionAPI()
+        const mentionMenuData = extensionAPI.mentionMenuData
+        const mentionSettings = useContext(ChatMentionContext)
 
-    useImperativeHandle(
-        ref,
-        (): PromptEditorRefAPI => ({
-            setEditorState(state: SerializedPromptEditorState): void {
-                api.setDocument(schema.nodeFromJSON(fromSerializedPromptEditorState(state)))
-            },
-            getSerializedValue(): SerializedPromptEditorValue {
-                return toSerializedPromptEditorValue(api.getEditorState().doc)
-            },
-            async setFocus(focus, { moveCursorToEnd } = {}): Promise<void> {
-                api.setFocus(focus, { moveCursorToEnd })
-            },
-            async appendText(text: string): Promise<void> {
-                api.appendText(text)
-            },
-            async filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void> {
-                api.filterMentions(filter)
-            },
-            async addMentions(
-                items: ContextItem[],
-                position: 'before' | 'after' = 'after',
-                sep = ' '
-            ): Promise<void> {
-                api.addMentions(items, position, sep)
-            },
-            async upsertMentions(
-                items: ContextItem[],
-                position: 'before' | 'after' = 'after',
-                sep = ' ',
-                focusEditor = true
-            ): Promise<void> {
-                api.upsertMentions(items, position, sep, focusEditor)
-            },
-            async setInitialContextMentions(items: ContextItem[]): Promise<void> {
-                api.setInitialContextMentions(items)
-            },
-            async openAtMentionMenu() {
-                api.openAtMentionMenu()
-                api.setFocus(true)
-            },
-        }),
-        [api]
-    )
+        const fetchMenuData = useCallback(
+            ({ query, provider }: { query: string; provider?: ContextMentionProviderMetadata }) => {
+                const initialContext = [
+                    ...defaultContext.initialContext,
+                    ...defaultContext.corpusContext,
+                ]
+                const queryLower = query.toLowerCase().trim()
+                const filteredInitialContextItems = provider
+                    ? []
+                    : queryLower
+                      ? initialContext.filter(item => item.title?.toLowerCase().startsWith(queryLower))
+                      : initialContext
 
-    useEffect(() => {
-        if (initialEditorState) {
-            const currentEditorState = normalizeEditorStateJSON(api.getEditorState().doc.toJSON())
-            const newEditorState = fromSerializedPromptEditorState(initialEditorState)
-            if (!isEqual(currentEditorState, newEditorState)) {
-                api.setDocument(schema.nodeFromJSON(newEditorState))
+                // NOTE: It's important to only emit after we receive new mentions menu data.
+                // This ensures that we display the 'old' menu items until new have arrived
+                // and prevents the menu from 'flickering'.
+                return combineLatest(
+                    mentionMenuData({
+                        ...parseMentionQuery(query, provider ?? null),
+                        interactionID: interactionID.current,
+                        contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
+                    }),
+                    extensionAPI.frequentlyUsedContextItems()
+                ).pipe(
+                    map(([menuData, frequentlyUsedItems]) => {
+                        // Get user-provided context items, limited to max suggestions and marked as user source
+                        const items =
+                            menuData.items
+                                ?.slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
+                                .map((item: ContextItem) => ({
+                                    ...item,
+                                    source: ContextItemSource.User,
+                                })) ?? []
+
+                        // Return early with just the items if a specific provider is selected
+                        if (provider) {
+                            return items
+                        }
+
+                        // Filter out any hidden context providers
+                        const providers = menuData.providers.filter(
+                            (provider: ContextMentionProviderMetadata) =>
+                                !hiddenProviders.includes(provider.id)
+                        )
+
+                        // With a query, show only matching items
+                        if (query) {
+                            return [...filteredInitialContextItems, ...providers, ...items]
+                        }
+
+                        // Filter out any frequently used items that are already in filteredInitialContextItems
+                        const uniqueFrequentlyUsedItems = frequentlyUsedItems
+                            .filter(
+                                frequentItem =>
+                                    !filteredInitialContextItems.some(
+                                        initialItem =>
+                                            initialItem.uri.toString() === frequentItem.uri.toString()
+                                    )
+                            )
+                            .slice(0, 3)
+
+                        // Without a query, include filtered frequently used items
+                        return [
+                            ...filteredInitialContextItems,
+                            ...uniqueFrequentlyUsedItems,
+                            ...providers,
+                            ...items,
+                        ]
+                    })
+                )
+            },
+            [mentionMenuData, mentionSettings, defaultContext, extensionAPI.frequentlyUsedContextItems]
+        )
+
+        const [input, api] = usePromptInput({
+            placeholder,
+            initialDocument: convertedInitialEditorState,
+            disabled,
+            contextWindowSizeInTokens,
+            onChange: doc => {
+                onChange?.(toSerializedPromptEditorValue(doc))
+            },
+            onFocusChange,
+            onEnterKey,
+            fetchMenuData,
+            openExternalLink,
+        })
+
+        const {
+            show,
+            items,
+            selectedIndex,
+            query,
+            position: menuPosition,
+            parent,
+        } = useMentionsMenu(input)
+
+        useLayoutEffect(() => {
+            // We increment the interaction ID when the menu is hidden because `fetchMenuData` can be
+            // called before the menu is shown, which would result in a different interaction ID for the
+            // first fetch.
+            if (!show) {
+                interactionID.current++
             }
-        }
-    }, [initialEditorState, api])
+        }, [show])
 
-    const renderItem = useCallback(
-        (item: ContextItem | ContextMentionProviderMetadata) => {
-            if ('id' in item) {
-                return <MentionMenuProviderItemContent provider={item} />
+        useImperativeHandle(
+            ref,
+            (): PromptEditorRefAPI => ({
+                setEditorState(state: SerializedPromptEditorState): void {
+                    api.setDocument(schema.nodeFromJSON(fromSerializedPromptEditorState(state)))
+                },
+                getSerializedValue(): SerializedPromptEditorValue {
+                    return toSerializedPromptEditorValue(api.getEditorState().doc)
+                },
+                async setFocus(focus, { moveCursorToEnd } = {}): Promise<void> {
+                    api.setFocus(focus, { moveCursorToEnd })
+                },
+                async appendText(text: string): Promise<void> {
+                    api.appendText(text)
+                },
+                async filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void> {
+                    api.filterMentions(filter)
+                },
+                async addMentions(
+                    items: ContextItem[],
+                    position: 'before' | 'after' = 'after',
+                    sep = ' '
+                ): Promise<void> {
+                    api.addMentions(items, position, sep)
+                },
+                async upsertMentions(
+                    items: ContextItem[],
+                    position: 'before' | 'after' = 'after',
+                    sep = ' ',
+                    focusEditor = true
+                ): Promise<void> {
+                    api.upsertMentions(items, position, sep, focusEditor)
+                },
+                async setInitialContextMentions(items: ContextItem[]): Promise<void> {
+                    api.setInitialContextMentions(items)
+                },
+                async openAtMentionMenu() {
+                    api.openAtMentionMenu()
+                    api.setFocus(true)
+                },
+            }),
+            [api]
+        )
+
+        useEffect(() => {
+            if (initialEditorState) {
+                const currentEditorState = normalizeEditorStateJSON(api.getEditorState().doc.toJSON())
+                const newEditorState = fromSerializedPromptEditorState(initialEditorState)
+                if (!isEqual(currentEditorState, newEditorState)) {
+                    api.setDocument(schema.nodeFromJSON(newEditorState))
+                }
             }
-            // TODO: Support item.badge
-            return <MentionMenuContextItemContent item={item} query={parseMentionQuery(query, parent)} />
-        },
-        [query, parent]
-    )
+        }, [initialEditorState, api])
 
-    return (
-        <div
-            className={clsx(styles.editor, editorClassName, {
-                [styles.disabled]: disabled,
-                [styles.seamless]: seamless,
-            })}
-            //For compatibility with the CSS rules that target this attribute
-            data-lexical-editor="true"
-        >
-            <div className={clsx(styles.input, contentEditableClassName)} ref={api.ref} />
-            {show && (
-                <MentionsMenu
-                    items={items}
-                    selectedIndex={selectedIndex}
-                    menuPosition={menuPosition}
-                    getHeader={() => getItemsHeading(parent, query)}
-                    getEmptyLabel={() => getEmptyLabel(parent, query)}
-                    onSelect={index => api.applySuggestion(index)}
-                    renderItem={renderItem}
-                />
-            )}
-        </div>
-    )
-}
+        const renderItem = useCallback(
+            (item: ContextItem | ContextMentionProviderMetadata) => {
+                if ('id' in item) {
+                    return <MentionMenuProviderItemContent provider={item} />
+                }
+                // TODO: Support item.badge
+                return (
+                    <MentionMenuContextItemContent
+                        item={item}
+                        query={parseMentionQuery(query, parent)}
+                    />
+                )
+            },
+            [query, parent]
+        )
+
+        return (
+            <div
+                className={clsx(styles.editor, editorClassName, {
+                    [styles.disabled]: disabled,
+                    [styles.seamless]: seamless,
+                })}
+                //For compatibility with the CSS rules that target this attribute
+                data-lexical-editor="true"
+            >
+                <div className={clsx(styles.input, contentEditableClassName)} ref={api.ref} />
+                {show && (
+                    <MentionsMenu
+                        items={items}
+                        selectedIndex={selectedIndex}
+                        menuPosition={menuPosition}
+                        getHeader={() => getItemsHeading(parent, query)}
+                        getEmptyLabel={() => getEmptyLabel(parent, query)}
+                        onSelect={index => api.applySuggestion(index)}
+                        renderItem={renderItem}
+                    />
+                )}
+            </div>
+        )
+    },
+    isEqual
+)
 
 function getItemsHeading(
     parentItem: ContextMentionProviderMetadata | null,
