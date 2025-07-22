@@ -1,4 +1,5 @@
 import type * as vscode from 'vscode'
+import type { Uri, WorkspaceEditEntryMetadata } from 'vscode'
 import type { EditFileOperation, WorkspaceEditOperation } from '../jsonrpc/agent-protocol'
 
 export class AgentWorkspaceEdit implements vscode.WorkspaceEdit {
@@ -17,16 +18,11 @@ export class AgentWorkspaceEdit implements vscode.WorkspaceEdit {
         for (const operation of this.edits.values()) {
             switch (operation.type) {
                 case 'create-file':
-                case 'delete-file':
                 case 'edit-file':
                     if (operation.uri === uriString) {
                         return true
                     }
                     break
-                case 'rename-file':
-                    if (operation.oldUri === uriString) {
-                        return true
-                    }
             }
         }
         return false
@@ -61,38 +57,20 @@ export class AgentWorkspaceEdit implements vscode.WorkspaceEdit {
     }
 
     public deleteFile(
-        uri: vscode.Uri,
-        options?:
-            | {
-                  readonly recursive?: boolean | undefined
-                  readonly ignoreIfNotExists?: boolean | undefined
-              }
-            | undefined,
-        metadata?: vscode.WorkspaceEditEntryMetadata | undefined
+        uri: Uri,
+        options?: { readonly recursive?: boolean; readonly ignoreIfNotExists?: boolean },
+        metadata?: WorkspaceEditEntryMetadata
     ): void {
-        this.edits.push({
-            type: 'delete-file',
-            uri: uri.toString(),
-            deleteOptions: options,
-            metadata,
-        })
+        throw new Error('Method not implemented.')
     }
 
     public renameFile(
-        oldUri: vscode.Uri,
-        newUri: vscode.Uri,
-        options?:
-            | { readonly overwrite?: boolean | undefined; readonly ignoreIfExists?: boolean | undefined }
-            | undefined,
-        metadata?: vscode.WorkspaceEditEntryMetadata | undefined
+        oldUri: Uri,
+        newUri: Uri,
+        options?: { readonly overwrite?: boolean; readonly ignoreIfExists?: boolean },
+        metadata?: WorkspaceEditEntryMetadata
     ): void {
-        this.edits.push({
-            type: 'rename-file',
-            oldUri: oldUri.toString(),
-            newUri: newUri.toString(),
-            options,
-            metadata,
-        })
+        throw new Error('Method not implemented.')
     }
 
     public replace(

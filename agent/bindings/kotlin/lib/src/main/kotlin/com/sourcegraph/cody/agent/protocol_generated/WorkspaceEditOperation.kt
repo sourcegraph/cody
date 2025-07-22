@@ -14,8 +14,6 @@ sealed class WorkspaceEditOperation {
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
         when (element.getAsJsonObject().get("type").getAsString()) {
           "create-file" -> context.deserialize<CreateFileOperation>(element, CreateFileOperation::class.java)
-          "rename-file" -> context.deserialize<RenameFileOperation>(element, RenameFileOperation::class.java)
-          "delete-file" -> context.deserialize<DeleteFileOperation>(element, DeleteFileOperation::class.java)
           "edit-file" -> context.deserialize<EditFileOperation>(element, EditFileOperation::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
@@ -33,31 +31,6 @@ data class CreateFileOperation(
 
   enum class TypeEnum {
     @SerializedName("create-file") `Create-file`,
-  }
-}
-
-data class RenameFileOperation(
-  val type: TypeEnum, // Oneof: rename-file
-  val oldUri: String,
-  val newUri: String,
-  val options: WriteFileOptions? = null,
-  val metadata: WorkspaceEditEntryMetadata? = null,
-) : WorkspaceEditOperation() {
-
-  enum class TypeEnum {
-    @SerializedName("rename-file") `Rename-file`,
-  }
-}
-
-data class DeleteFileOperation(
-  val type: TypeEnum, // Oneof: delete-file
-  val uri: String,
-  val deleteOptions: DeleteOptionsParams? = null,
-  val metadata: WorkspaceEditEntryMetadata? = null,
-) : WorkspaceEditOperation() {
-
-  enum class TypeEnum {
-    @SerializedName("delete-file") `Delete-file`,
   }
 }
 
