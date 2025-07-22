@@ -34,18 +34,13 @@ export function createRemoteFileProvider(customTitle?: string): OpenCtxProvider 
             }
 
             // Check if we should show branch suggestions for this repository
-            if (!filePath.trim()) {
-                // Check if repoName contains a branch (repo@branch format from mention menu)
-                if (repoName.includes('@')) {
-                    // This is "repo@branch:" - show file listing for this branch
-                    const [repoNamePart, branch] = repoName.split('@')
-                    return await getFileMentions(repoNamePart, '', branch)
-                }
-                // User typed "repo:" - show branch suggestions
-                return await getFileBranchMentions(repoName)
+            // Check if repoName contains a branch (repo@branch format from mention menu)
+            if (repoName.includes('@')) {
+                // This is "repo@branch:" - show file listing for this branch
+                const [repoNamePart, branch] = repoName.split('@')
+                return await getFileMentions(repoNamePart, filePath.trim(), branch)
             }
-
-            return await getFileMentions(repoName, filePath.trim())
+            return await getFileBranchMentions(repoName)
         },
 
         async items({ mention }) {
