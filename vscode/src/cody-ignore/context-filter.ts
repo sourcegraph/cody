@@ -4,13 +4,7 @@ import { type CodyIgnoreFeature, showCodyIgnoreNotification } from './notificati
 
 type IgnoreRecord = Record<string, boolean>
 
-interface CachedExcludeData {
-    gitignoreExclude: IgnoreRecord
-    ignoreExclude: IgnoreRecord
-    sgignoreExclude: IgnoreRecord
-}
-
-const excludeCache = new Map<string, CachedExcludeData>()
+const excludeCache = new Map<string, IgnoreRecord>()
 const fileWatchers = new Map<string, vscode.FileSystemWatcher>()
 
 function getCacheKey(workspaceFolder: vscode.WorkspaceFolder | null): string {
@@ -27,26 +21,21 @@ export async function initializeCache(workspaceFolder: vscode.WorkspaceFolder | 
         .getConfiguration('', workspaceFolder)
         .get<boolean>('search.useIgnoreFiles')
 
-    let gitignoreExclude: IgnoreRecord = {}
-    let ignoreExclude: IgnoreRecord = {}
     let sgignoreExclude: IgnoreRecord = {}
 
     if (useIgnoreFiles && workspaceFolder) {
-        gitignoreExclude = await readIgnoreFile(vscode.Uri.joinPath(workspaceFolder.uri, '.gitignore'))
-        ignoreExclude = await readIgnoreFile(vscode.Uri.joinPath(workspaceFolder.uri, '.ignore'))
         sgignoreExclude = await readIgnoreFile(
-            vscode.Uri.joinPath(workspaceFolder.uri, '.sourcegraph', '.ignore')
+            vscode.Uri.joinPath(workspaceFolder.uri, '.cody', 'ignore')
         )
 
-        setupFileWatcher(workspaceFolder, '.gitignore')
-        setupFileWatcher(workspaceFolder, '.ignore')
-        setupFileWatcher(workspaceFolder, '.sourcegraph/.ignore')
+        setupFileWatcher(workspaceFolder)
     }
 
-    excludeCache.set(cacheKey, { gitignoreExclude, ignoreExclude, sgignoreExclude })
+    excludeCache.set(cacheKey, sgignoreExclude)
 }
 
-function setupFileWatcher(workspaceFolder: vscode.WorkspaceFolder, filename: string): void {
+function setupFileWatcher(workspaceFolder: vscode.WorkspaceFolder): void {
+    const filename = '.cody/ignore'
     const watcherKey = `${workspaceFolder.uri.toString()}:${filename}`
     if (fileWatchers.has(watcherKey)) {
         return
@@ -57,35 +46,17 @@ function setupFileWatcher(workspaceFolder: vscode.WorkspaceFolder, filename: str
 
     const updateCache = async () => {
         const cacheKey = getCacheKey(workspaceFolder)
-        const cached = excludeCache.get(cacheKey)
-        if (!cached) return
 
         const fileUri = vscode.Uri.joinPath(workspaceFolder.uri, filename)
         const ignoreData = await readIgnoreFile(fileUri)
-
-        if (filename === '.gitignore') {
-            cached.gitignoreExclude = ignoreData
-        } else if (filename === '.ignore') {
-            cached.ignoreExclude = ignoreData
-        } else if (filename === '.sourcegraph/.ignore') {
-            cached.sgignoreExclude = ignoreData
-        }
+        excludeCache.set(cacheKey, ignoreData)
     }
 
     watcher.onDidChange(updateCache)
     watcher.onDidCreate(updateCache)
     watcher.onDidDelete(() => {
         const cacheKey = getCacheKey(workspaceFolder)
-        const cached = excludeCache.get(cacheKey)
-        if (!cached) return
-
-        if (filename === '.gitignore') {
-            cached.gitignoreExclude = {}
-        } else if (filename === '.ignore') {
-            cached.ignoreExclude = {}
-        } else if (filename === '.sourcegraph/.ignore') {
-            cached.sgignoreExclude = {}
-        }
+        excludeCache.delete(cacheKey)
     })
 
     fileWatchers.set(watcherKey, watcher)
@@ -102,22 +73,17 @@ export async function getExcludePattern(
 
     const cacheKey = getCacheKey(workspaceFolder)
     const cached = excludeCache.get(cacheKey)
-    const gitignoreExclude = cached?.gitignoreExclude ?? {}
-    const ignoreExclude = cached?.ignoreExclude ?? {}
-    const sgignoreExclude = cached?.sgignoreExclude ?? {}
-
+    const sgignoreExclude = cached ?? {}
     const mergedExclude: IgnoreRecord = {
         ...filesExclude,
         ...searchExclude,
-        ...gitignoreExclude,
-        ...ignoreExclude,
         ...sgignoreExclude,
     }
     const excludePatterns = Object.keys(mergedExclude).filter(key => mergedExclude[key] === true)
     return `{${excludePatterns.join(',')}}`
 }
 
-async function readIgnoreFile(uri: vscode.Uri): Promise<IgnoreRecord> {
+export async function readIgnoreFile(uri: vscode.Uri): Promise<IgnoreRecord> {
     const ignore: IgnoreRecord = {}
     try {
         const data = await vscode.workspace.fs.readFile(uri)
@@ -126,11 +92,17 @@ async function readIgnoreFile(uri: vscode.Uri): Promise<IgnoreRecord> {
                 continue
             }
 
-            // Strip comment and trailing whitespace.
-            line = line.replace(/\s*(#.*)?$/, '')
+            // Strip comment and whitespace.
+            line = line.replace(/\s*(#.*)?$/, '').trim()
 
             if (line === '') {
                 continue
+            }
+
+            // Replace , with . that contain commas to avoid typos for entries such as
+            // *,something
+            if (line.includes(',')) {
+                line = line.replace(',', '.')
             }
 
             if (line.endsWith('/')) {
