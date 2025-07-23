@@ -15,7 +15,6 @@ import {
     contextFiltersProvider,
     createSSEIterator,
     currentResolvedConfig,
-    currentUserProductSubscription,
     fetch,
     getActiveTraceAndSpanId,
     isAbortError,
@@ -128,13 +127,7 @@ export function createFastPathClient(
             // identical to the SG instance response but does not contain information on whether a user
             // is eligible to upgrade to the pro plan. We get this from the authState instead.
             if (response.status === 429) {
-                const sub = await currentUserProductSubscription()
-                const upgradeIsAvailable = sub !== null && !!sub.userCanUpgrade
-
-                throw recordErrorToSpan(
-                    span,
-                    await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
-                )
+                throw recordErrorToSpan(span, await createRateLimitErrorFromResponse(response, false))
             }
 
             if (!response.ok) {

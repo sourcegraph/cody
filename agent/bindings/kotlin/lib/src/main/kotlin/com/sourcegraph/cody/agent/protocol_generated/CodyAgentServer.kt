@@ -64,12 +64,8 @@ interface CodyAgentServer {
   fun graphql_getRepoIds(params: Graphql_GetRepoIdsParams): CompletableFuture<Graphql_GetRepoIdsResult>
   @JsonRequest("graphql/currentUserId")
   fun graphql_currentUserId(params: Null?): CompletableFuture<String>
-  @JsonRequest("graphql/currentUserIsPro")
-  fun graphql_currentUserIsPro(params: Null?): CompletableFuture<Boolean>
   @JsonRequest("featureFlags/getFeatureFlag")
   fun featureFlags_getFeatureFlag(params: FeatureFlags_GetFeatureFlagParams): CompletableFuture<Boolean?>
-  @JsonRequest("graphql/getCurrentUserCodySubscription")
-  fun graphql_getCurrentUserCodySubscription(params: Null?): CompletableFuture<CurrentUserCodySubscription?>
   @JsonRequest("telemetry/recordEvent")
   fun telemetry_recordEvent(params: TelemetryEvent): CompletableFuture<Null?>
   @JsonRequest("graphql/getRepoIdIfEmbeddingExists")

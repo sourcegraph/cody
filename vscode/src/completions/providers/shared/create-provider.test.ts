@@ -6,7 +6,6 @@ import {
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type CodyLLMSiteConfiguration,
     type ModelsData,
-    type UserProductSubscription,
     featureFlagProvider,
     firstValueFrom,
     mockAuthStatus,
@@ -16,14 +15,10 @@ import {
 
 import { mockLocalStorage } from '../../../services/LocalStorageProvider'
 
-import * as userProductSubscriptionModule from '../../../../../lib/shared/src/sourcegraph-api/userProductSubscription'
 import { createProvider } from './create-provider'
 import type { Provider } from './provider'
 
 async function createProviderForTest(...args: Parameters<typeof createProvider>): Promise<Provider> {
-    vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-        Observable.of<UserProductSubscription | null>({ userCanUpgrade: false })
-    )
     const providerOrError = await firstValueFrom(createProvider(...args).pipe(skipPendingOperation()))
 
     if (providerOrError instanceof Error) {

@@ -173,25 +173,6 @@ describe('Agent', () => {
         )
     }, 10_000)
 
-    it('graphql/getCurrentUserCodySubscription', async () => {
-        const currentUserCodySubscription = await client.request(
-            'graphql/getCurrentUserCodySubscription',
-            null
-        )
-        expect(currentUserCodySubscription).toMatchInlineSnapshot(`
-          {
-            "applyProRateLimits": true,
-            "currentPeriodEndAt": "2025-01-14T22:11:32Z",
-            "currentPeriodStartAt": "2024-12-14T22:11:32Z",
-            "plan": "PRO",
-            "status": "ACTIVE",
-          }
-        `)
-        // telemetry assertion, to validate the expected events fired during the test run
-        // Do not remove this assertion, and instead update the expectedEvents list above
-        expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
-    }, 10_000)
-
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
             await setChatModel('anthropic::2024-10-22::claude-3-5-sonnet-latest')

@@ -4,7 +4,6 @@ import type {
     ClientCapabilities,
     CodyCommand,
     ContextFilters,
-    CurrentUserCodySubscription,
     Model,
     ModelAvailabilityStatus,
     ModelUsage,
@@ -133,11 +132,8 @@ export type ClientRequests = {
 
     'graphql/currentUserId': [null, string]
 
-    'graphql/currentUserIsPro': [null, boolean]
-
     'featureFlags/getFeatureFlag': [{ flagName: string }, boolean | null]
 
-    'graphql/getCurrentUserCodySubscription': [null, CurrentUserCodySubscription | null]
     /**
      * Record telemetry events.
      */

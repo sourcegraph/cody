@@ -71,7 +71,7 @@ interface TabConfig {
 
 export const TabsBar = memo<TabsBarProps>(props => {
     const { currentView, setView, user, endpointHistory, showOpenInEditor } = props
-    const { isCodyProUser, IDE } = user
+    const { IDE } = user
     const tabItems = useTabs({ user })
     const {
         config: { webviewType, multipleWebviewsEnabled, allowEndpointChange },
@@ -164,7 +164,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
                         {IDE !== CodyIDE.Web && (
                             <UserMenu
                                 authStatus={user.user as AuthenticatedAuthStatus}
-                                isProUser={isCodyProUser}
+                                isProUser={false}
                                 endpointHistory={endpointHistory}
                                 allowEndpointChange={allowEndpointChange}
                                 className="!tw-opacity-100 tw-h-full"

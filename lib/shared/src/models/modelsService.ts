@@ -2,7 +2,7 @@ import { type Observable, map } from 'observable-fns'
 
 import { authStatus, currentAuthStatus } from '../auth/authStatus'
 import { mockAuthStatus } from '../auth/authStatus'
-import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
+import { type AuthStatus, isEnterpriseUser } from '../auth/types'
 import { AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '../auth/types'
 import { type PickResolvedConfiguration, resolvedConfig } from '../configuration/resolver'
 import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
@@ -18,10 +18,6 @@ import {
 } from '../misc/observable'
 import { firstResultFromOperation, pendingOperation } from '../misc/observableOperation'
 import { ClientConfigSingleton } from '../sourcegraph-api/clientConfig'
-import {
-    type UserProductSubscription,
-    userProductSubscription,
-} from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { configOverwrites } from './configOverwrites'
 import { type Model, type ServerModel, modelTier } from './model'
@@ -371,7 +367,6 @@ export class ModelsService {
         authStatus,
         configOverwrites,
         clientConfig: ClientConfigSingleton.getInstance().changes,
-        userProductSubscription,
     })
 
     /**
@@ -433,18 +428,9 @@ export class ModelsService {
     }
 
     public getDefaultModel(type: ModelUsage): Observable<Model | undefined | typeof pendingOperation> {
-        return combineLatest(
-            this.getModelsByType(type),
-            this.modelsChanges,
-            authStatus,
-            userProductSubscription
-        ).pipe(
-            map(([models, modelsData, authStatus, userProductSubscription]) => {
-                if (
-                    models === pendingOperation ||
-                    modelsData === pendingOperation ||
-                    userProductSubscription === pendingOperation
-                ) {
+        return combineLatest(this.getModelsByType(type), this.modelsChanges, authStatus).pipe(
+            map(([models, modelsData, authStatus]) => {
+                if (models === pendingOperation || modelsData === pendingOperation) {
                     return pendingOperation
                 }
 
@@ -454,8 +440,8 @@ export class ModelsService {
                 // Find the first model the user can use that isn't a reasoning model
                 const firstModelUserCanUse = models.find(
                     m =>
-                        this._isModelAvailable(modelsData, authStatus, userProductSubscription, m) ===
-                            true && !m.tags.includes(ModelTag.Reasoning)
+                        this._isModelAvailable(modelsData, authStatus, m) === true &&
+                        !m.tags.includes(ModelTag.Reasoning)
                 )
 
                 if (modelsData.preferences) {
@@ -473,12 +459,7 @@ export class ModelsService {
                             (selected.tags.includes(ModelTag.Reasoning) ||
                                 selected.tags.includes(ModelTag.Deprecated))
                         ) &&
-                        this._isModelAvailable(
-                            modelsData,
-                            authStatus,
-                            userProductSubscription,
-                            selected
-                        ) === true
+                        this._isModelAvailable(modelsData, authStatus, selected) === true
                     ) {
                         return selected
                     }
@@ -547,11 +528,11 @@ export class ModelsService {
     }
 
     public isModelAvailable(model: string | Model): Observable<boolean | typeof pendingOperation> {
-        return combineLatest(authStatus, this.modelsChanges, userProductSubscription).pipe(
-            map(([authStatus, modelsData, userProductSubscription]) =>
-                modelsData === pendingOperation || userProductSubscription === pendingOperation
+        return combineLatest(authStatus, this.modelsChanges).pipe(
+            map(([authStatus, modelsData]) =>
+                modelsData === pendingOperation
                     ? pendingOperation
-                    : this._isModelAvailable(modelsData, authStatus, userProductSubscription, model)
+                    : this._isModelAvailable(modelsData, authStatus, model)
             ),
             distinctUntilChanged()
         )
@@ -560,7 +541,6 @@ export class ModelsService {
     private _isModelAvailable(
         modelsData: ModelsData,
         authStatus: AuthStatus,
-        sub: UserProductSubscription | null,
         model: string | Model
     ): boolean {
         const resolved = this.resolveModel(modelsData, model)
@@ -571,17 +551,6 @@ export class ModelsService {
         // Cody Enterprise users are able to use any models that the backend says is supported.
         if (isEnterpriseUser(authStatus)) {
             return true
-        }
-
-        // A Cody Pro user can use any Free or Pro model, but not Enterprise.
-        // (But in reality, Sourcegraph.com wouldn't serve any Enterprise-only models to
-        // Cody Pro users anyways.)
-        if (isCodyProUser(authStatus, sub)) {
-            return (
-                tier !== 'enterprise' &&
-                !resolved.tags.includes(ModelTag.Waitlist) &&
-                !resolved.tags.includes(ModelTag.OnWaitlist)
-            )
         }
 
         return tier === 'free'

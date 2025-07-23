@@ -1,4 +1,3 @@
-import { isCodyProUser } from '@sourcegraph/cody-shared'
 import {
     type ComponentProps,
     type FunctionComponent,
@@ -13,13 +12,7 @@ import type { UserAccountInfo } from '../Chat'
 export interface Config
     extends Pick<
         Extract<ExtensionMessage, { type: 'config' }>,
-        | 'config'
-        | 'clientCapabilities'
-        | 'authStatus'
-        | 'isDotComUser'
-        | 'userProductSubscription'
-        | 'siteHasCodyEnabled'
-        | 'currentUserCodySubscription'
+        'config' | 'clientCapabilities' | 'authStatus' | 'siteHasCodyEnabled'
     > {}
 
 const ConfigContext = createContext<Config | null>(null)
@@ -45,14 +38,7 @@ export function useConfig(): Config {
 }
 
 export function useUserAccountInfo(): UserAccountInfo {
-    const {
-        authStatus,
-        isDotComUser,
-        clientCapabilities,
-        userProductSubscription,
-        siteHasCodyEnabled,
-        currentUserCodySubscription,
-    } = useConfig()
+    const { authStatus, clientCapabilities, siteHasCodyEnabled } = useConfig()
 
     if (!authStatus.authenticated) {
         throw new Error(
@@ -61,22 +47,10 @@ export function useUserAccountInfo(): UserAccountInfo {
     }
     return useMemo<UserAccountInfo>(
         () => ({
-            isCodyProUser: isCodyProUser(authStatus, userProductSubscription ?? null),
-            // Receive this value from the extension backend to make it work
-            // with E2E tests where change the DOTCOM_URL via the env variable CODY_OVERRIDE_DOTCOM_URL.
-            isDotComUser: isDotComUser,
             user: authStatus,
             IDE: clientCapabilities.agentIDE,
             siteHasCodyEnabled,
-            currentUserCodySubscription,
         }),
-        [
-            authStatus,
-            isDotComUser,
-            clientCapabilities,
-            userProductSubscription,
-            siteHasCodyEnabled,
-            currentUserCodySubscription,
-        ]
+        [authStatus, clientCapabilities, siteHasCodyEnabled]
     )
 }

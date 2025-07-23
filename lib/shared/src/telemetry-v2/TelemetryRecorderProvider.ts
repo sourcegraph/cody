@@ -18,10 +18,6 @@ import { currentAuthStatusOrNotReadyYet } from '../auth/authStatus'
 import type { AuthStatus } from '../auth/types'
 import { clientCapabilities } from '../configuration/clientCapabilities'
 import type { PickResolvedConfiguration } from '../configuration/resolver'
-import {
-    type UserProductSubscription,
-    cachedUserProductSubscription,
-} from '../sourcegraph-api/userProductSubscription'
 import { getTier } from './cody-tier'
 
 export interface ExtensionDetails {
@@ -192,15 +188,13 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
         // The tier is not known yet when the user is not authed, and
         // `this.authStatusProvider.status` will throw, so omit it.
         let authStatus: AuthStatus | undefined
-        let sub: UserProductSubscription | null = null
         try {
             authStatus = currentAuthStatusOrNotReadyYet()
-            sub = cachedUserProductSubscription()
         } catch {}
         if (authStatus) {
             event.parameters.metadata.push({
                 key: 'tier',
-                value: getTier(authStatus, sub),
+                value: getTier(authStatus),
             })
         }
     }

@@ -8,10 +8,8 @@ import {
 import { isMacOS } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
-import { AlertTriangleIcon, BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
+import { AlertTriangleIcon, BookOpenIcon, BrainIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
-import type { UserAccountInfo } from '../../Chat'
-import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { chatModelIconComponent } from '../ChatModelIcon'
 import { Badge } from '../shadcn/ui/badge'
@@ -36,8 +34,6 @@ export const ModelSelectField: React.FunctionComponent<{
     onModelSelect: (model: Model) => void
     serverSentModelsEnabled: boolean
 
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
-
     onCloseByEscape?: () => void
     className?: string
 
@@ -51,7 +47,6 @@ export const ModelSelectField: React.FunctionComponent<{
     models,
     onModelSelect: parentOnModelSelect,
     serverSentModelsEnabled,
-    userInfo,
     onCloseByEscape,
     className,
     intent,
@@ -64,17 +59,13 @@ export const ModelSelectField: React.FunctionComponent<{
     // The first model is the always the default.
     const selectedModel = models[0]
 
-    const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
-    const isEnterpriseUser = !userInfo.isDotComUser
-    const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
-
     const onModelSelect = useCallback(
         (model: Model): void => {
             if (selectedModel.id !== model.id) {
                 telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
                     metadata: {
                         modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
-                        isCodyProUser: isCodyProUser ? 1 : 0,
+                        isCodyProUser: 0,
                     },
                     privateMetadata: {
                         modelId: model.id,
@@ -87,26 +78,13 @@ export const ModelSelectField: React.FunctionComponent<{
                     },
                 })
             }
-            if (showCodyProBadge && isCodyProModel(model)) {
-                getVSCodeAPI().postMessage({
-                    command: 'links',
-                    value: 'https://sourcegraph.com/cody/subscription',
-                })
-                return
-            }
             parentOnModelSelect(model)
         },
-        [
-            selectedModel,
-            telemetryRecorder.recordEvent,
-            showCodyProBadge,
-            parentOnModelSelect,
-            isCodyProUser,
-        ]
+        [selectedModel, telemetryRecorder.recordEvent, parentOnModelSelect]
     )
 
     // Readonly if they are an enterprise user that does not support server-sent models
-    const readOnly = !(userInfo.isDotComUser || serverSentModelsEnabled)
+    const readOnly = !serverSentModelsEnabled
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
@@ -114,7 +92,7 @@ export const ModelSelectField: React.FunctionComponent<{
                 // Trigger only when dropdown is about to be opened.
                 telemetryRecorder.recordEvent('cody.modelSelector', 'open', {
                     metadata: {
-                        isCodyProUser: isCodyProUser ? 1 : 0,
+                        isCodyProUser: 0,
                         totalModels: models.length,
                     },
                     billingMetadata: {
@@ -124,14 +102,14 @@ export const ModelSelectField: React.FunctionComponent<{
                 })
             }
         },
-        [telemetryRecorder.recordEvent, isCodyProUser, models.length]
+        [telemetryRecorder.recordEvent, models.length]
     )
 
     const options = useMemo<SelectListOption[]>(
         () =>
             models
                 .map(m => {
-                    const availability = modelAvailability(userInfo, serverSentModelsEnabled, m, intent)
+                    const availability = modelAvailability(serverSentModelsEnabled, m, intent)
                     if (availability === 'needs-cody-pro') {
                         return undefined
                     }
@@ -154,7 +132,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     } satisfies SelectListOption
                 })
                 .filter(Boolean) as SelectListOption[],
-        [models, userInfo, serverSentModelsEnabled, intent]
+        [models, serverSentModelsEnabled, intent]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
         return optionByGroup(options)
@@ -265,42 +243,6 @@ export const ModelSelectField: React.FunctionComponent<{
                                 </span>
                             </CommandLink>
                         </CommandGroup>
-                        {userInfo.isDotComUser && (
-                            <CommandGroup>
-                                <CommandLink
-                                    key="enterprise-model-options"
-                                    href={ENTERPRISE_MODEL_DOCS_PAGE}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    onSelect={() => {
-                                        telemetryRecorder.recordEvent(
-                                            'cody.modelSelector',
-                                            'clickEnterpriseModelOption',
-                                            {
-                                                billingMetadata: {
-                                                    product: 'cody',
-                                                    category: 'billable',
-                                                },
-                                            }
-                                        )
-                                    }}
-                                    className={styles.modelTitleWithIcon}
-                                >
-                                    <span className={styles.modelIcon}>
-                                        {/* wider than normal to fit in with provider icons */}
-                                        <BuildingIcon size={16} strokeWidth={2} />{' '}
-                                    </span>
-                                    <span className={styles.modelName}>Enterprise Model Options</span>
-                                    <span className={styles.rightIcon}>
-                                        <ExternalLinkIcon
-                                            size={16}
-                                            strokeWidth={1.25}
-                                            className="tw-opacity-80"
-                                        />
-                                    </span>
-                                </CommandLink>
-                            </CommandGroup>
-                        )}
                     </CommandList>
                 </Command>
             )}
@@ -319,14 +261,9 @@ export const ModelSelectField: React.FunctionComponent<{
         </ToolbarPopoverItem>
     )
 }
-
-const ENTERPRISE_MODEL_DOCS_PAGE =
-    'https://sourcegraph.com/docs/cody/clients/enable-cody-enterprise?utm_source=cody.modelSelector'
-
 type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-enterprise'
 
 function modelAvailability(
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
     serverSentModelsEnabled: boolean,
     model: Model,
     intent?: ChatMessage['intent']
@@ -334,11 +271,8 @@ function modelAvailability(
     if (model.disabled) {
         return 'not-selectable-on-enterprise'
     }
-    if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
+    if (!serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
-    }
-    if (isCodyProModel(model) && userInfo.isDotComUser && !userInfo.isCodyProUser) {
-        return 'needs-cody-pro'
     }
     // For agentic mode, only allow models with the AgenticCompatible tag (Claude 3.7 Sonnet)
     if (intent === 'agentic' && !model.tags.includes(ModelTag.Default)) {

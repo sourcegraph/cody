@@ -12,7 +12,6 @@ import {
     type CodyClientConfig,
     type ContextItem,
     ContextItemSource,
-    type CurrentUserCodySubscription,
     type DefaultChatCommands,
     type EventSource,
     FeatureFlag,
@@ -33,7 +32,6 @@ import {
     currentAuthStatus,
     currentAuthStatusAuthed,
     currentResolvedConfig,
-    currentUserProductSubscription,
     distinctUntilChanged,
     extractContextFromTraceparent,
     featureFlagProvider,
@@ -70,7 +68,6 @@ import {
     telemetryRecorder,
     tracer,
     truncatePromptString,
-    userProductSubscription,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
@@ -648,17 +645,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Fetch additional user data if authenticated and not in testing mode
         let siteHasCodyEnabled: boolean | null = null
-        let currentUserCodySubscription: CurrentUserCodySubscription | null = null
 
         if (authStatus.authenticated && !isCodyTesting) {
             try {
-                const [siteResult, subscriptionResult] = await Promise.all([
-                    graphqlClient.getSiteHasCodyEnabled(),
-                    graphqlClient.getCurrentUserCodySubscription(),
-                ])
+                const [siteResult] = await Promise.all([graphqlClient.getSiteHasCodyEnabled()])
 
                 siteHasCodyEnabled = isError(siteResult) ? null : siteResult
-                currentUserCodySubscription = isError(subscriptionResult) ? null : subscriptionResult
             } catch (error) {
                 // Log error but don't fail the config send
                 console.error('Failed to fetch additional user data', error)
@@ -670,11 +662,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             config: configForWebview,
             clientCapabilities: clientCapabilities(),
             authStatus: authStatus,
-            userProductSubscription: await currentUserProductSubscription(),
             workspaceFolderUris,
-            isDotComUser: isDotCom(authStatus),
             siteHasCodyEnabled,
-            currentUserCodySubscription,
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
@@ -1787,10 +1776,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         type === ChatHistoryType.Full
                             ? chatHistory.changes
                             : chatHistory.lightweightChanges,
-                    userProductSubscription: () =>
-                        userProductSubscription.pipe(
-                            map(value => (value === pendingOperation ? null : value))
-                        ),
                     // Existing tools endpoint - update to include MCP tools
                     mcpSettings: () => {
                         return featureFlagProvider

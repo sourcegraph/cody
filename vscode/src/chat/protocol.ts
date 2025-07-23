@@ -8,14 +8,12 @@ import type {
     CodyIDE,
     ContextItem,
     ContextItemSource,
-    CurrentUserCodySubscription,
     ProcessingStep,
     PromptMode,
     RangeData,
     RequestMessage,
     ResponseMessage,
     SerializedChatMessage,
-    UserProductSubscription,
 } from '@sourcegraph/cody-shared'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
@@ -179,11 +177,8 @@ export type ExtensionMessage =
           config: ConfigurationSubsetForWebview
           clientCapabilities: ClientCapabilitiesWithLegacyFields
           authStatus: AuthStatus
-          userProductSubscription?: UserProductSubscription | null | undefined
-          isDotComUser: boolean
           workspaceFolderUris: string[]
           siteHasCodyEnabled?: boolean | null | undefined
-          currentUserCodySubscription?: CurrentUserCodySubscription | null | undefined
       }
     | {
           type: 'clientConfig'

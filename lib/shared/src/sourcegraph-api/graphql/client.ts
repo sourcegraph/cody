@@ -36,8 +36,6 @@ import {
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
     CURRENT_SITE_VERSION_QUERY,
-    CURRENT_USER_CODY_PRO_ENABLED_QUERY,
-    CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     CURRENT_USER_ROLE_QUERY,
@@ -219,24 +217,6 @@ interface CodyConfigFeaturesResponse {
 interface CodyEnterpriseConfigSmartContextResponse {
     site: {
         codyLLMConfiguration: { smartContextWindow: string } | null
-    } | null
-}
-
-interface CurrentUserCodyProEnabledResponse {
-    currentUser: {
-        codyProEnabled: boolean
-    } | null
-}
-
-interface CurrentUserCodySubscriptionResponse {
-    currentUser: {
-        codySubscription: {
-            status: string
-            plan: string
-            applyProRateLimits: boolean
-            currentPeriodStartAt: Date
-            currentPeriodEndAt: Date
-        }
     } | null
 }
 
@@ -566,14 +546,6 @@ export interface CodyLLMSiteConfiguration {
     smartContextWindow?: boolean
 }
 
-export interface CurrentUserCodySubscription {
-    status: string
-    plan: string
-    applyProRateLimits: boolean
-    currentPeriodStartAt: Date
-    currentPeriodEndAt: Date
-}
-
 export interface CurrentUserInfo {
     id: string
     hasVerifiedEmail: boolean
@@ -873,27 +845,6 @@ export class SourcegraphGraphQLAPIClient {
             {}
         ).then(response =>
             extractDataOrError(response, data => (data.currentUser ? data.currentUser : null))
-        )
-    }
-
-    public async getCurrentUserCodyProEnabled(): Promise<{ codyProEnabled: boolean } | null | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodyProEnabledResponse>>(
-            CURRENT_USER_CODY_PRO_ENABLED_QUERY,
-            {}
-        ).then(response =>
-            extractDataOrError(response, data => (data.currentUser ? { ...data.currentUser } : null))
-        )
-    }
-
-    public async getCurrentUserCodySubscription(
-        signal?: AbortSignal
-    ): Promise<CurrentUserCodySubscription | null | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodySubscriptionResponse>>(
-            CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
-            {},
-            signal
-        ).then(response =>
-            extractDataOrError(response, data => data.currentUser?.codySubscription ?? null)
         )
     }
 

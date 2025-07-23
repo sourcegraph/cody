@@ -24,8 +24,6 @@ type Story = StoryObj<typeof Notices>
 
 // Mock user data
 const baseUser = {
-    isDotComUser: true,
-    isCodyProUser: false,
     user: {
         id: 'user-1',
         username: 'test-user',
@@ -59,7 +57,6 @@ export const NoNotices: Story = {
     args: {
         user: {
             ...baseUser,
-            isDotComUser: false,
         },
         instanceNotices: [],
     },

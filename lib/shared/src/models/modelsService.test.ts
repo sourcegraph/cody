@@ -4,9 +4,6 @@ import { currentAuthStatus, mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthenticatedAuthStatus } from '../auth/types'
 import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { firstValueFrom } from '../misc/observable'
-import { DOTCOM_URL } from '../sourcegraph-api/environments'
-import * as userProductSubscriptionModule from '../sourcegraph-api/userProductSubscription'
-import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { FIXTURE_MODELS } from './fixtures'
 import type { Model } from './model'
@@ -29,22 +26,6 @@ describe('modelsService', () => {
         // TODO(sqs)#observe: this only mocks tests that don't use modelsService.modelsChanges
         vi.spyOn(modelsService, 'models', 'get').mockReturnValue(models)
         return modelsService
-    }
-
-    const freeUserAuthStatus: AuthenticatedAuthStatus = {
-        ...AUTH_STATUS_FIXTURE_AUTHED,
-        endpoint: DOTCOM_URL.toString(),
-        authenticated: true,
-    }
-    const freeUserSub: UserProductSubscription = {
-        userCanUpgrade: true,
-    }
-
-    const codyProAuthStatus: AuthenticatedAuthStatus = {
-        ...freeUserAuthStatus,
-    }
-    const codyProSub: UserProductSubscription = {
-        userCanUpgrade: false,
     }
 
     const enterpriseAuthStatus: AuthenticatedAuthStatus = {
@@ -173,10 +154,7 @@ describe('modelsService', () => {
 
         let modelsService: ModelsService
         beforeEach(() => {
-            mockAuthStatus(codyProAuthStatus)
-            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-                Observable.of(codyProSub)
-            )
+            mockAuthStatus(enterpriseAuthStatus)
             modelsService = modelsServiceWithModels([
                 model1chat,
                 model2chat,
@@ -247,78 +225,29 @@ describe('modelsService', () => {
             usage: [ModelUsage.Chat],
             tags: [ModelTag.Enterprise],
         })
-        const proModel = createModel({
-            id: 'pro-model',
-            usage: [ModelUsage.Chat],
-            tags: [ModelTag.Pro],
-        })
-        const freeModel = createModel({
-            id: 'free-model',
-            usage: [ModelUsage.Chat],
-            // We don't include ModelTag.Free here to test that it's not required.
-            tags: [],
-        })
 
         beforeEach(() => {
             vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
                 Observable.of({
                     ...EMPTY_MODELS_DATA,
-                    primaryModels: [enterpriseModel, proModel, freeModel],
+                    primaryModels: [enterpriseModel],
                 })
             )
         })
 
         it('returns false for unknown model', async () => {
-            mockAuthStatus(codyProAuthStatus)
-            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-                Observable.of(codyProSub)
-            )
+            mockAuthStatus(enterpriseAuthStatus)
             expect(await firstValueFrom(modelsService.isModelAvailable('unknown-model'))).toBe(false)
         })
 
         it('allows enterprise user to use any model', async () => {
             mockAuthStatus(enterpriseAuthStatus)
-            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-                Observable.of(null)
-            )
             expect(await firstValueFrom(modelsService.isModelAvailable(enterpriseModel))).toBe(true)
-            expect(await firstValueFrom(modelsService.isModelAvailable(proModel))).toBe(true)
-            expect(await firstValueFrom(modelsService.isModelAvailable(freeModel))).toBe(true)
-        })
-
-        it('allows Cody Pro user to use Pro and Free models', async () => {
-            mockAuthStatus(codyProAuthStatus)
-            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-                Observable.of(codyProSub)
-            )
-            expect(await firstValueFrom(modelsService.isModelAvailable(enterpriseModel))).toBe(false)
-            expect(await firstValueFrom(modelsService.isModelAvailable(proModel))).toBe(true)
-            expect(await firstValueFrom(modelsService.isModelAvailable(freeModel))).toBe(true)
-        })
-
-        it('allows free user to use only Free models', async () => {
-            mockAuthStatus(freeUserAuthStatus)
-            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-                Observable.of(freeUserSub)
-            )
-            expect(await firstValueFrom(modelsService.isModelAvailable(enterpriseModel))).toBe(false)
-            expect(await firstValueFrom(modelsService.isModelAvailable(proModel))).toBe(false)
-            expect(await firstValueFrom(modelsService.isModelAvailable(freeModel))).toBe(true)
         })
 
         it('handles model passed as string', async () => {
-            mockAuthStatus(freeUserAuthStatus)
-            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-                Observable.of(freeUserSub)
-            )
-            expect(await firstValueFrom(modelsService.isModelAvailable(freeModel.id))).toBe(true)
-            expect(await firstValueFrom(modelsService.isModelAvailable(proModel.id))).toBe(false)
-
-            mockAuthStatus(codyProAuthStatus)
-            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-                Observable.of(codyProSub)
-            )
-            expect(await firstValueFrom(modelsService.isModelAvailable(proModel.id))).toBe(true)
+            mockAuthStatus(enterpriseAuthStatus)
+            expect(await firstValueFrom(modelsService.isModelAvailable(enterpriseModel.id))).toBe(true)
         })
     })
 
@@ -475,10 +404,7 @@ describe('modelsService', () => {
         })
 
         beforeEach(() => {
-            mockAuthStatus(codyProAuthStatus)
-            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-                Observable.of(codyProSub)
-            )
+            mockAuthStatus(enterpriseAuthStatus)
 
             modelsService = new ModelsService()
             storage = new TestLocalStorageForModelPreferences()
@@ -674,12 +600,8 @@ describe('modelsService', () => {
         })
 
         beforeEach(() => {
-            mockAuthStatus(freeUserAuthStatus)
+            mockAuthStatus(enterpriseAuthStatus)
             vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
-            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
-                Observable.of(codyProSub)
-            )
-
             storage = new TestLocalStorageForModelPreferences()
         })
 
@@ -704,7 +626,7 @@ describe('modelsService', () => {
             expect(defaultEditModelId).toBe('gpt-4o-mini')
 
             const prefsAfter = storage.getModelPreferences()
-            const selectedEditModel = prefsAfter[freeUserAuthStatus.endpoint]?.selected?.edit
+            const selectedEditModel = prefsAfter[enterpriseAuthStatus.endpoint]?.selected?.edit
             expect(selectedEditModel).toBe('gpt-4o-mini')
         })
 
@@ -733,7 +655,7 @@ describe('modelsService', () => {
             expect(defaultEditModelId).toBe('other-edit-model')
 
             const prefsAfter = storage.getModelPreferences()
-            const selectedEditModel = prefsAfter[freeUserAuthStatus.endpoint]?.selected?.edit
+            const selectedEditModel = prefsAfter[enterpriseAuthStatus.endpoint]?.selected?.edit
             expect(selectedEditModel).toBe('other-edit-model')
         })
     })

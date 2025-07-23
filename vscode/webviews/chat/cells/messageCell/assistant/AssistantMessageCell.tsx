@@ -98,7 +98,6 @@ export const AssistantMessageCell: FunctionComponent<{
                             ) : (
                                 <ErrorItem
                                     error={message.error}
-                                    userInfo={userInfo}
                                     postMessage={postMessage}
                                     humanMessage={humanMessage}
                                 />

@@ -36,7 +36,6 @@ const createMockExtensionAPI = (): WebviewToExtensionAPI => ({
     authStatus: vi.fn().mockReturnValue({ isLoggedIn: false }),
     transcript: vi.fn().mockReturnValue([]),
     userHistory: vi.fn().mockReturnValue(null),
-    userProductSubscription: vi.fn().mockReturnValue(null),
     frequentlyUsedContextItems: vi.fn().mockReturnValue([]),
     mcpSettings: () => new Observable(() => {}),
 })

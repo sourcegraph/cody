@@ -1,6 +1,5 @@
 import { isDotCom } from '../sourcegraph-api/environments'
 import type { AuthError } from '../sourcegraph-api/errors'
-import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 
 /**
  * The authentication status, which includes representing the state when authentication failed or
@@ -71,14 +70,6 @@ export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false }
 export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {
     ...AUTH_STATUS_FIXTURE_AUTHED,
     endpoint: 'https://sourcegraph.com' as string,
-}
-
-export function isCodyProUser(authStatus: AuthStatus, sub: UserProductSubscription | null): boolean {
-    return isDotCom(authStatus) && authStatus.authenticated && sub !== null && !sub.userCanUpgrade
-}
-
-export function isFreeUser(authStatus: AuthStatus, sub: UserProductSubscription | null): boolean {
-    return isDotCom(authStatus) && authStatus.authenticated && sub !== null && !!sub.userCanUpgrade
 }
 
 export function isEnterpriseUser(authStatus: AuthStatus): boolean {

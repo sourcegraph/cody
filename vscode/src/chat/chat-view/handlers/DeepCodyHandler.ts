@@ -10,12 +10,10 @@ import {
     combineLatest,
     distinctUntilChanged,
     featureFlagProvider,
-    isDotCom,
     modelsService,
     pendingOperation,
     resolvedConfig,
     startWith,
-    userProductSubscription,
 } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { type Observable, Subject, map } from 'observable-fns'
@@ -120,7 +118,6 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextDisabled),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ContextAgentDefaultChatModel),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext),
-        userProductSubscription.pipe(distinctUntilChanged()),
         modelsService.modelsChanges.pipe(
             map(models => (models === pendingOperation ? null : models)),
             distinctUntilChanged()
@@ -134,18 +131,13 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
                 isDisabledOnInstance,
                 useDefaultChatModel,
                 instanceShellContextFlag,
-                sub,
                 models,
                 config,
             ]) => {
                 // Return null if:
                 // - Subscription is pending
-                // - Users can upgrade (free user)
                 // - Feature flag to disabled is on.
-                const isDotComUser = isDotCom(auth.endpoint)
                 if (
-                    sub === pendingOperation ||
-                    (isDotComUser && sub?.userCanUpgrade) ||
                     !models ||
                     isCodyTesting ||
                     isDisabledOnInstance ||
