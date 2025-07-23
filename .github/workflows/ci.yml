@@ -186,10 +186,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
-          name: playwright-recordings ${{ matrix.runner }}
+          name: playwright-recordings-${{ github.event.pull_request.number || github.ref }}-${{ matrix.runner }}
           path: |
             playwright/
             vscode/test-results/
+          overwrite: true
 
   build:
     runs-on: ubuntu-latest
