@@ -161,11 +161,8 @@ export const test = base
     })
     .extend<{ server: MockServer }>({
         server: [
-            async ({ shouldUseEnterprise }, use) => {
+            async (_, use) => {
                 MockServer.run(async server => {
-                    if (shouldUseEnterprise !== undefined) {
-                        server.setUserShouldUseEnterprise(shouldUseEnterprise)
-                    }
                     await use(server)
                 })
             },

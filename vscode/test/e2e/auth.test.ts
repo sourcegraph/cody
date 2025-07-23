@@ -102,7 +102,6 @@ test
     'logs out the user when userShouldUseEnterprise is set to true',
     async ({ page, sidebar, server }) => {
         await sidebarSignin(page, sidebar, { skipAssertions: true })
-        await server.setUserShouldUseEnterprise(true)
         await expectSignInPage(page)
         await expect(
             page
