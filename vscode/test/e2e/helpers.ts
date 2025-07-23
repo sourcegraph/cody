@@ -44,10 +44,6 @@ interface WorkspaceSettings {
     [key: string]: string | boolean | number
 }
 
-export type EnterpriseTestOptions = {
-    shouldUseEnterprise: boolean
-}
-
 // Playwright test extension: Extra VSCode settings to write to
 // .vscode/settings.json.
 export interface ExtraWorkspaceSettings {
@@ -123,9 +119,6 @@ export const test = base
     .extend<ClientConfigSingletonRefetchIntervalOverride>({
         clientConfigSingletonRefetchInterval: undefined,
     })
-    .extend<EnterpriseTestOptions>({
-        shouldUseEnterprise: [false, { option: true }],
-    })
     .extend<TestConfiguration>({
         preAuthenticate: false,
     })
@@ -161,7 +154,7 @@ export const test = base
     })
     .extend<{ server: MockServer }>({
         server: [
-            async ({ param }, use) => {
+            async (_, use) => {
                 MockServer.run(async server => {
                     await use(server)
                 })

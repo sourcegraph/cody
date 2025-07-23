@@ -4,7 +4,6 @@ import { expectSignInPage, sidebarSignin } from './common'
 import {
     type ClientConfigSingletonRefetchIntervalOverride,
     type DotcomUrlOverride,
-    type EnterpriseTestOptions,
     type ExpectedV2Events,
     signOut,
     test,
@@ -56,9 +55,6 @@ test.extend<ExpectedV2Events>({
 test
     .extend<DotcomUrlOverride>({
         dotcomUrl: SERVER_URL,
-    })
-    .extend<EnterpriseTestOptions>({
-        shouldUseEnterprise: true,
     })
     .extend<ExpectedV2Events>({
         // list of V2 telemetry events we expect this test to log, add to this list as needed
