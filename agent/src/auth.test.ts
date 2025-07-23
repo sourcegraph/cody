@@ -16,7 +16,7 @@ describe(
         repeats: process.env.CODY_RECORDING_MODE ? 0 : 10,
     },
     () => {
-        const INITIAL_CREDENTIALS: TestingCredentials = TESTING_CREDENTIALS.dotcom
+        const INITIAL_CREDENTIALS: TestingCredentials = TESTING_CREDENTIALS.enterprise
         const INVALID_CREDENTIALS: TestingCredentials = {
             serverEndpoint: INITIAL_CREDENTIALS.serverEndpoint,
             redactedToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEE2',

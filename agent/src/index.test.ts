@@ -11,8 +11,6 @@ import {
     type SerializedChatTranscript,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
-import { ResponseError } from 'vscode-jsonrpc'
-import { CodyJsonRpcErrorCode } from '../../vscode/src/jsonrpc/CodyJsonRpcErrorCode'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { logTestingData } from '../../vscode/test/fixtures/mock-server'
 import { TestClient } from './TestClient'
@@ -51,13 +49,7 @@ describe('Agent', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
-        credentials: TESTING_CREDENTIALS.dotcom,
-    })
-
-    const rateLimitedClient = TestClient.create({
-        workspaceRootUri: workspace.rootUri,
-        name: 'rateLimitedClient',
-        credentials: TESTING_CREDENTIALS.dotcomProUserRateLimited,
+        credentials: TESTING_CREDENTIALS.enterprise,
     })
 
     const mockContextItems: ContextItem[] = []
@@ -108,7 +100,6 @@ describe('Agent', () => {
         await client.request('testing/reset', null)
     })
 
-    const sumUri = workspace.file('src', 'sum.ts')
     const animalUri = workspace.file('src', 'animal.ts')
     const squirrelUri = workspace.file('src', 'squirrel.ts')
 
@@ -661,54 +652,6 @@ describe('Agent', () => {
             // Do not remove this assertion, and instead update the expectedEvents list above
             expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
         })
-    })
-
-    describe('RateLimitedAgent', () => {
-        // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
-        beforeAll(async () => {
-            const serverInfo = await rateLimitedClient.initialize()
-
-            expect(serverInfo.authStatus?.status).toEqual('authenticated')
-            if (serverInfo.authStatus?.status !== 'authenticated') {
-                throw new Error('unreachable')
-            }
-            expect(serverInfo.authStatus.username).toStrictEqual('sourcegraphcodyclients-1-efapb')
-        }, 10_000)
-
-        // Skipped because Polly is failing to record the HTTP rate-limit error
-        // response. Keeping the code around in case we need to debug these in
-        // the future. Use the following command to run this test:
-        // - First, mark this test as `it.only`
-        // - Next, run `CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts`
-        it.skip('chat/submitMessage (RateLimitError)', async () => {
-            const lastMessage = await rateLimitedClient.sendSingleMessageToNewChat('sqrt(9)')
-            // Intentionally not a snapshot assertion because we should never
-            // automatically update 'RateLimitError' to become another value.
-            expect(lastMessage?.error?.name).toStrictEqual('RateLimitError')
-        }, 30_000)
-
-        // Skipped because Polly is failing to record the HTTP rate-limit error
-        // response. Keeping the code around in case we need to debug these in
-        // the future. Use the following command to run this test:
-        // - First, mark this test as `it.only`
-        // - Next, run `CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts`
-        it.skip('autocomplete/trigger (RateLimitError)', async () => {
-            let code = 0
-            try {
-                await rateLimitedClient.openFile(sumUri)
-                const result = await rateLimitedClient.autocompleteText()
-                console.log({ result })
-            } catch (error) {
-                if (error instanceof ResponseError) {
-                    code = error.code
-                }
-            }
-            expect(code).toEqual(CodyJsonRpcErrorCode.RateLimitError)
-        }, 30_000)
-        afterAll(async () => {
-            await rateLimitedClient.shutdownAndExit()
-            // Long timeout because to allow Polly.js to persist HTTP recordings
-        }, 30_000)
     })
 
     afterAll(async () => {
