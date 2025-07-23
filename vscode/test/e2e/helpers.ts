@@ -161,7 +161,7 @@ export const test = base
     })
     .extend<{ server: MockServer }>({
         server: [
-            async ({}, use) => {
+            async ({ param }, use) => {
                 MockServer.run(async server => {
                     await use(server)
                 })

@@ -83,7 +83,7 @@ export const Toolbar: FunctionComponent<{
     const isImageUploadEnabled = useMemo(() => {
         const selectedModel = models?.[0]
         return selectedModel?.tags?.includes(ModelTag.Vision)
-    }, [false, models?.[0]])
+    }, [models?.[0]])
 
     const modelSelectorRef = useRef<{ open: () => void; close: () => void } | null>(null)
     const promptSelectorRef = useRef<{ open: () => void; close: () => void } | null>(null)
