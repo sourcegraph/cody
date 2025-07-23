@@ -1,3 +1,11 @@
+> [!NOTE]
+> Cody transitioned to a private repo. This repository, `sourcegraph/cody-public-snapshot` is a publicly available copy of the `sourcegraph/cody` repository as it was just before the migration.
+
+> [!TIP]
+> If you are interested in working with the code, this [commit](https://github.com/sourcegraph/cody-public-snapshot/commit/d91e8e4a06233ddd80ad5618a313b66c1ea4ee7a) is the last one made under an Apache License.
+
+---
+
 <div align=center>
 
 # <img src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default.svg" width="26"> Cody
