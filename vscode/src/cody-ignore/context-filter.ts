@@ -17,15 +17,11 @@ export async function initializeCache(workspaceFolder: vscode.WorkspaceFolder | 
         return
     }
 
-    const useIgnoreFiles = vscode.workspace
-        .getConfiguration('', workspaceFolder)
-        .get<boolean>('search.useIgnoreFiles')
-
     let sgignoreExclude: IgnoreRecord = {}
 
-    if (useIgnoreFiles && workspaceFolder) {
+    if (workspaceFolder) {
         sgignoreExclude = await readIgnoreFile(
-            vscode.Uri.joinPath(workspaceFolder.uri, '.cody', 'ignore')
+            vscode.Uri.joinPath(workspaceFolder.uri, '.sourcegraph', 'ignore')
         )
 
         setupFileWatcher(workspaceFolder)
@@ -35,7 +31,7 @@ export async function initializeCache(workspaceFolder: vscode.WorkspaceFolder | 
 }
 
 function setupFileWatcher(workspaceFolder: vscode.WorkspaceFolder): void {
-    const filename = '.cody/ignore'
+    const filename = '.sourcegraph/ignore'
     const watcherKey = `${workspaceFolder.uri.toString()}:${filename}`
     if (fileWatchers.has(watcherKey)) {
         return
@@ -67,16 +63,10 @@ export async function getExcludePattern(
 ): Promise<string> {
     await initializeCache(workspaceFolder)
 
-    const config = vscode.workspace.getConfiguration('', workspaceFolder)
-    const filesExclude = config.get<IgnoreRecord>('files.exclude', {})
-    const searchExclude = config.get<IgnoreRecord>('search.exclude', {})
-
     const cacheKey = getCacheKey(workspaceFolder)
     const cached = excludeCache.get(cacheKey)
     const sgignoreExclude = cached ?? {}
     const mergedExclude: IgnoreRecord = {
-        ...filesExclude,
-        ...searchExclude,
         ...sgignoreExclude,
     }
     const excludePatterns = Object.keys(mergedExclude).filter(key => mergedExclude[key] === true)
