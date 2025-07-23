@@ -12,7 +12,7 @@ describe.skip('Generate Unit Test', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'generate-unit-test',
-        credentials: TESTING_CREDENTIALS.dotcom,
+        credentials: TESTING_CREDENTIALS.enterprise,
     })
 
     beforeAll(async () => {

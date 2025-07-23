@@ -12,7 +12,7 @@ describe('Edit', { timeout: 5000 }, () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'edit',
-        credentials: TESTING_CREDENTIALS.dotcom,
+        credentials: TESTING_CREDENTIALS.enterprise,
     })
 
     beforeAll(async () => {
@@ -80,7 +80,7 @@ describe('Edit', { timeout: 5000 }, () => {
 
           export interface ChatColumnProps {
           	messages: Message[]
-          	setChatID: (chatID: string) => void
+          	setChatID: (id: string) => void
           	isLoading: boolean
           }
 
@@ -145,7 +145,8 @@ describe('Edit', { timeout: 5000 }, () => {
         await client.acceptEditTask(uri, taskId)
         expect(client.documentText(uri)).toMatchInlineSnapshot(
             `
-          "export function trickyLogic(a: number, b: number): number {
+          "/* SELECTION_START */
+          export function trickyLogic(a: number, b: number): number {
               switch (true) {
                   case a === 0:
                       return 1
@@ -154,7 +155,9 @@ describe('Edit', { timeout: 5000 }, () => {
                   default:
                       return a - b
               }
-          }"
+          }
+          /* SELECTION_END */
+          "
         `,
             explainPollyError
         )
@@ -178,7 +181,7 @@ describe('Edit', { timeout: 5000 }, () => {
           "-- divide price and gst by 10
           select audit_open('COM-1351-luke');
           update products.fee
-          set gst = (price * 0.1)
+          set gst = gst / 10
           where last_updated_by = 'COM-1351';
           "
         `

@@ -9,7 +9,7 @@ describe('Configuration', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'configuration',
-        credentials: TESTING_CREDENTIALS.dotcom,
+        credentials: TESTING_CREDENTIALS.enterprise,
         extraConfiguration: {
             'cody.suggestions.mode': 'autocomplete',
         },

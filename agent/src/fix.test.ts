@@ -12,7 +12,7 @@ describe.skipIf(isWindows())('Fix', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'fix',
-        credentials: TESTING_CREDENTIALS.dotcom,
+        credentials: TESTING_CREDENTIALS.enterprise,
     })
 
     beforeAll(async () => {

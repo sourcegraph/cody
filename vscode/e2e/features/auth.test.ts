@@ -22,7 +22,7 @@ test.describe('Auth', () => {
         await sidebar.content.getByPlaceholder('Example: https://instance.').click()
         await sidebar.content
             .getByPlaceholder('Example: https://instance.')
-            .fill(mitmProxy.sourcegraph.dotcom.endpoint)
+            .fill(mitmProxy.sourcegraph.enterprise.endpoint)
         // Access Token
         await sidebar.content.getByText('Access Token (Optional)').click()
         await sidebar.content.getByPlaceholder('Access token...').fill(MITM_AUTH_TOKEN_PLACEHOLDER)

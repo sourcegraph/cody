@@ -15,7 +15,7 @@ describe(
         const client = TestClient.create({
             workspaceRootUri: workspace.rootUri,
             name: 'unauthed',
-            credentials: TESTING_CREDENTIALS.dotcomUnauthed,
+            credentials: TESTING_CREDENTIALS.s2Unauthed,
         })
 
         beforeAll(async () => {
@@ -31,14 +31,14 @@ describe(
         it('starts up with no credentials', async () => {
             const authStatus = await client.request('extensionConfiguration/status', null)
             expect(authStatus?.authenticated).toBe(false)
-            expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcomUnauthed.serverEndpoint)
+            expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.s2Unauthed.serverEndpoint)
         })
 
         it.skip('starts up with default endpoint and credentials if they are present in the secure store', async () => {
             const newClient = TestClient.create({
                 workspaceRootUri: workspace.rootUri,
                 name: 'unauthed-new',
-                credentials: TESTING_CREDENTIALS.dotcomUnauthed,
+                credentials: TESTING_CREDENTIALS.s2Unauthed,
                 capabilities: {
                     ...allClientCapabilitiesEnabled,
                     secrets: 'client-managed',
@@ -46,8 +46,8 @@ describe(
             })
 
             await newClient.secrets.store(
-                TESTING_CREDENTIALS.dotcom.serverEndpoint,
-                TESTING_CREDENTIALS.dotcom.token ?? 'invalid'
+                TESTING_CREDENTIALS.s2.serverEndpoint,
+                TESTING_CREDENTIALS.s2.token ?? 'invalid'
             )
 
             await newClient.beforeAll(
@@ -56,31 +56,30 @@ describe(
             )
             const authStatus = await newClient.request('extensionConfiguration/status', null)
             expect(authStatus?.authenticated).toBe(true)
-            expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcom.serverEndpoint)
+            expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.s2.serverEndpoint)
             await newClient.afterAll()
         })
 
         it('authenticates to same endpoint using valid credentials', async () => {
             const authStatus = await client.request('extensionConfiguration/change', {
                 ...client.info.extensionConfiguration,
-                accessToken:
-                    TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
-                serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
+                accessToken: TESTING_CREDENTIALS.s2.token ?? TESTING_CREDENTIALS.s2.redactedToken,
+                serverEndpoint: TESTING_CREDENTIALS.s2.serverEndpoint,
                 customHeaders: {},
             })
             expect(authStatus?.authenticated).toBe(true)
-            expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcom.serverEndpoint)
+            expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.s2.serverEndpoint)
         })
 
         it('de-authenticates to same endpoint', async () => {
             const authStatus = await client.request('extensionConfiguration/change', {
                 ...client.info.extensionConfiguration,
                 accessToken: undefined,
-                serverEndpoint: TESTING_CREDENTIALS.dotcomUnauthed.serverEndpoint,
+                serverEndpoint: TESTING_CREDENTIALS.s2Unauthed.serverEndpoint,
                 customHeaders: {},
             })
             expect(authStatus?.authenticated).toBe(false)
-            expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcomUnauthed.serverEndpoint)
+            expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.s2Unauthed.serverEndpoint)
         })
 
         it('authenticates to a different endpoint using valid credentials', async () => {

@@ -7,9 +7,8 @@ export const TestLogger = {
         // Do some stuff
 
         /**
-         * Logs a basic message indicating log recording.
-         * Used internally by the TestLogger to track logging events.
-         */
+                 * Outputs a log message to the console for recording purposes.
+                 */
         function recordLog() {
             console.log(/* CURSOR */ 'Recording the log')
         }
@@ -22,9 +21,7 @@ export const TestLogger = {
 
 exports[`Document Code > commands/document (Kotlin class name) 1`] = `
 "/**
- * Represents a simple Hello class with a greeting method.
- *
- * @return A string containing the classic "Hello, world!" message.
+ * A simple greeting class that provides a basic "Hello, world!" message.
  */
 class He/* CURSOR */llo {
     fun greeting(): String {
@@ -51,7 +48,7 @@ export class TestClass {
     constructor(private shouldGreet: boolean) {}
 
     /**
-         * Prints a greeting message if shouldGreet is true.
+         * Conditionally logs a greeting message to the console based on the shouldGreet flag.
          */
     public functionName() {
         if (this.shouldGreet) {
@@ -89,10 +86,7 @@ describe('test block', () => {
 
     it('does something else', () => {
         // This line will error due to incorrect usage of \`performance.now\`
-        /**
-         * Captures the current high-resolution timestamp for performance measurement.
-         * Uses \`performance.now()\` to get a precise time value with microsecond precision.
-         */
+        // Record the current timestamp in milliseconds for performance measurement
         const startTime = performance.now(/* CURSOR */)
     })
 })
@@ -101,11 +95,10 @@ describe('test block', () => {
 
 exports[`Document Code > editCommands/document (basic function) 1`] = `
 "/**
- * Calculates the sum of two numbers.
- * 
- * @param a The first number to add.
- * @param b The second number to add.
- * @returns The sum of a and b.
+ * Adds two numbers together.
+ * @param a - The first number to add
+ * @param b - The second number to add
+ * @returns The sum of a and b
  */
 export function sum(a: number, b: number): number {
     /* CURSOR */

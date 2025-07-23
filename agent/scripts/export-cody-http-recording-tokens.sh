@@ -22,5 +22,5 @@ export SRC_ENTERPRISE_ACCESS_TOKEN="$(gcloud secrets versions access latest --se
 
 export SRC_S2_ACCESS_TOKEN="$(gcloud secrets versions access latest --secret CODY_S2_ACCESS_TOKEN --project cody-agent-tokens --quiet)"
 
-# Tests run against dotcom by default.
-export SRC_ENDPOINT=https://sourcegraph.com
+# Tests run against demo by default.
+export SRC_ENDPOINT=https://demo.sourcegraph.com

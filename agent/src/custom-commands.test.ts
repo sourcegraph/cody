@@ -14,7 +14,7 @@ describe('Custom Commands', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'customCommandsClient',
-        credentials: TESTING_CREDENTIALS.dotcom,
+        credentials: TESTING_CREDENTIALS.enterprise,
     })
 
     beforeAll(async () => {

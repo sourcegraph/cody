@@ -31,9 +31,11 @@ describe('rewrite-query', () => {
             configuration: { customHeaders: {} },
             auth: {
                 credentials: {
-                    token: TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
+                    token:
+                        TESTING_CREDENTIALS.enterprise.token ??
+                        TESTING_CREDENTIALS.enterprise.redactedToken,
                 },
-                serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
+                serverEndpoint: TESTING_CREDENTIALS.enterprise.serverEndpoint,
             },
         })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)

@@ -164,7 +164,6 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 PW: '1', //indicate a playwright test
                 ...process.env,
                 CODY_OVERRIDE_UI_KIND: `${1 satisfies UIKind.Desktop}`,
-                TESTING_DOTCOM_URL: mitmProxy.sourcegraph.dotcom.endpoint,
                 CODY_TESTING_BFG_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
                 CODY_TESTING_SYMF_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
             }

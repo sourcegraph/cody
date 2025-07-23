@@ -15,7 +15,7 @@ describe.skip('Memory Usage', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'memory-usage',
-        credentials: TESTING_CREDENTIALS.dotcom,
+        credentials: TESTING_CREDENTIALS.enterprise,
     })
 
     beforeAll(async () => {
