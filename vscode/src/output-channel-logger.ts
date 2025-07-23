@@ -10,26 +10,28 @@ export const CODY_OUTPUT_CHANNEL = 'Cody by Sourcegraph'
  * Provides a default output channel and creates per-feature output channels when needed.
  */
 class OutputChannelManager {
-    public defaultOutputChannel = vscode.window.createOutputChannel(CODY_OUTPUT_CHANNEL, 'json')
-    private outputChannels: Map<string, vscode.OutputChannel> = new Map()
+    public defaultOutputChannel = vscode.window.createOutputChannel(CODY_OUTPUT_CHANNEL, { log: true })
+    private outputChannels: Map<string, vscode.LogOutputChannel> = new Map()
 
-    getOutputChannel(feature: string): vscode.OutputChannel | undefined {
+    getOutputChannel(feature: string): vscode.LogOutputChannel | undefined {
         if (!this.outputChannels.has(feature) && process.env.NODE_ENV === 'development') {
-            const channel = vscode.window.createOutputChannel(`Cody ${feature}`, 'json')
+            const channel = vscode.window.createOutputChannel(`Cody ${feature}`, { log: true })
             this.outputChannels.set(feature, channel)
         }
 
         return this.outputChannels.get(feature)
     }
 
-    appendLine(text: string, feature?: string): void {
+    appendLine(level: 'debug' | 'error', text: string, feature?: string): void {
         // Always log to the default output channel
-        this.defaultOutputChannel?.appendLine(text)
+        level === 'error'
+            ? this.defaultOutputChannel?.error(text)
+            : this.defaultOutputChannel?.debug(text)
 
         // Also log to the feature-specific output channel if available
         if (feature) {
             const channel = this.getOutputChannel(feature)
-            channel?.appendLine(text)
+            level === 'error' ? channel?.error(text) : channel?.debug(text)
         }
 
         // Write to log file if needed
@@ -97,7 +99,7 @@ export class Logger {
             debugVerbose,
         })
 
-        outputChannelManager.appendLine(message, feature)
+        outputChannelManager.appendLine(level, message, feature)
     }
 }
 
