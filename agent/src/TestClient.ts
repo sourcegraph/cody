@@ -785,7 +785,7 @@ ${patch}`
         mockLocalStorage('inMemory')
         const info = await this.initialize(additionalConfig)
         if (expectAuthenticated && !info.authStatus?.authenticated) {
-            throw new Error('Could not log in')
+            throw new Error('Could not log in. Auth status: ' + JSON.stringify(info.authStatus))
         }
     }
     public async afterAll() {
@@ -799,7 +799,11 @@ ${patch}`
             )
             if (missingRecordingErrors.length > 0) {
                 for (const error of missingRecordingErrors) {
-                    await this.printDiffAgainstClosestMatchingRecording(error)
+                    try {
+                        await this.printDiffAgainstClosestMatchingRecording(error)
+                    } catch (error) {
+                        console.error('Error printing diff:', error)
+                    }
                 }
                 const errorMessage = missingRecordingErrors[0].error?.split?.('\n')?.[0]
                 throw new Error(
@@ -865,7 +869,14 @@ ${patch}`
         })
     }
 
-    private getClientInfo(capabilities: ClientCapabilities = allClientCapabilitiesEnabled): ClientInfo {
+    private defultTestClientCapabilities: ClientCapabilities = {
+        ...allClientCapabilitiesEnabled,
+        secrets: 'stateless',
+    }
+
+    private getClientInfo(
+        capabilities: ClientCapabilities = this.defultTestClientCapabilities
+    ): ClientInfo {
         return {
             name: this.name,
             version: 'v1',
@@ -873,9 +884,7 @@ ${patch}`
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
             capabilities: {
                 ...capabilities,
-                // The test client doesn't implement secrets/didChange, so we need to use the
-                // stateless secrets store.
-                secrets: 'stateless',
+                secrets: capabilities.secrets ?? 'stateless',
             },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,

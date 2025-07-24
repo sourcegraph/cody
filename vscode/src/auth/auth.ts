@@ -433,9 +433,14 @@ export async function signOut(endpoint: string): Promise<void> {
         }
     )
 
-    await Promise.all([secretStorage.deleteToken(endpoint), localStorage.deleteEndpoint(endpoint)])
-
+    // We need to signout (reset `authProvider::lastValidatedAndStoredCredentials` and `authProvider::status`)
+    // before deleting endpoint from localStorage because localStorage modification triggers config resolver,
+    // which in turn try to read endpoint and token from localStorage and secretStorage again.
+    // If the order of clearing is wrong it leads to a race between config resolver observable and
+    // promises of deleteToken and deleteEndpoint and may cause incorrect re-logging.
     authProvider.signout(endpoint)
+
+    await Promise.all([secretStorage.deleteToken(endpoint), localStorage.deleteEndpoint(endpoint)])
 }
 
 /**
