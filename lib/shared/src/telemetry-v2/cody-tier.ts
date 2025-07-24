@@ -6,6 +6,7 @@ enum CodyTier {
     Free = 0,
     Pro = 1,
     Enterprise = 2,
+    NotAuthenticated = 3,
 }
 
 export function getTier(
@@ -13,7 +14,7 @@ export function getTier(
     sub: UserProductSubscription | null
 ): CodyTier | undefined {
     return !authStatus.authenticated
-        ? undefined
+        ? CodyTier.NotAuthenticated
         : !isDotCom(authStatus)
           ? CodyTier.Enterprise
           : !sub || sub.userCanUpgrade
