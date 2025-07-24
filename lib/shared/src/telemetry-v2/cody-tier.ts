@@ -5,6 +5,6 @@ enum CodyTier {
     NotAuthenticated = 3,
 }
 
-export function getTier(authStatus: AuthStatus): CodyTier | undefined {
-    return !authStatus.authenticated ? NotAuthenticated : CodyTier.Enterprise
+export function getTier(authStatus: AuthStatus): CodyTier {
+    return authStatus.authenticated ? CodyTier.Enterprise : CodyTier.NotAuthenticated
 }

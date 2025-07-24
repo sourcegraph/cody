@@ -51,7 +51,7 @@ describe(
             )
 
             await newClient.beforeAll(
-                { serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint },
+                { serverEndpoint: TESTING_CREDENTIALS.s2.serverEndpoint },
                 { expectAuthenticated: true }
             )
             const authStatus = await newClient.request('extensionConfiguration/status', null)
