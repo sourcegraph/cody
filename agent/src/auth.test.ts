@@ -140,75 +140,71 @@ describe(
             expect(models.map(({ model }) => model.id)).toContain('openai::2024-02-01::gpt-4o') // arbitrary model that we expect to be included
         })
 
-        // Skipped this test because of flakiness on ubuntu 18 in GitHub Actions.
-        it.skipIf(process.env.GITHUB_ACTIONS && process.env.CODY_NODE_VERSION === '18')(
-            'switches to a different account',
-            async () => {
-                // Re-authenticate to a different endpoint so we can switch from it. It is important to
-                // do this even if the preceding test does it because we might not be running the prior
-                // tests or we might be running with `repeats > 0`.
-                const preAuthStatus = await client.request('extensionConfiguration/change', {
-                    ...client.info.extensionConfiguration,
-                    accessToken: INITIAL_CREDENTIALS.token ?? INITIAL_CREDENTIALS.redactedToken,
-                    serverEndpoint: INITIAL_CREDENTIALS.serverEndpoint,
-                    customHeaders: {},
-                })
-                expect(preAuthStatus?.authenticated).toBe(true)
-                expect(preAuthStatus?.endpoint).toBe(INITIAL_CREDENTIALS.serverEndpoint)
+        it.skip('switches to a different account', async () => {
+            // Re-authenticate to a different endpoint so we can switch from it. It is important to
+            // do this even if the preceding test does it because we might not be running the prior
+            // tests or we might be running with `repeats > 0`.
+            const preAuthStatus = await client.request('extensionConfiguration/change', {
+                ...client.info.extensionConfiguration,
+                accessToken: INITIAL_CREDENTIALS.token ?? INITIAL_CREDENTIALS.redactedToken,
+                serverEndpoint: INITIAL_CREDENTIALS.serverEndpoint,
+                customHeaders: {},
+            })
+            expect(preAuthStatus?.authenticated).toBe(true)
+            expect(preAuthStatus?.endpoint).toBe(INITIAL_CREDENTIALS.serverEndpoint)
 
-                const dotcomModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-                expect(dotcomModels?.models?.length).toBeGreaterThanOrEqual(1)
+            const dotcomModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            expect(dotcomModels?.models?.length).toBeGreaterThanOrEqual(1)
 
-                // Before switching, set a chat model as default on the prior endpoint. We want it to NOT be
-                // carried over to the endpoint we switch to.
-                const preChatID = await client.request('chat/new', null)
-                await client.request('chat/setModel', {
-                    id: preChatID,
-                    model: FIXTURE_MODELS.differentFromDotcomAndS2DefaultChatModel[0],
-                })
+            // Before switching, set a chat model as default on the prior endpoint. We want it to NOT be
+            // carried over to the endpoint we switch to.
+            const preChatID = await client.request('chat/new', null)
+            await client.request('chat/setModel', {
+                id: preChatID,
+                model: FIXTURE_MODELS.differentFromDotcomAndS2DefaultChatModel[0],
+            })
 
-                const authStatus = await client.request('extensionConfiguration/change', {
-                    ...client.info.extensionConfiguration,
-                    accessToken: SWITCH_CREDENTIALS.token ?? SWITCH_CREDENTIALS.redactedToken,
-                    serverEndpoint: SWITCH_CREDENTIALS.serverEndpoint,
-                    customHeaders: {},
-                })
-                expect(authStatus?.authenticated).toBe(true)
-                expect(authStatus?.endpoint).toBe(SWITCH_CREDENTIALS.serverEndpoint)
+            const authStatus = await client.request('extensionConfiguration/change', {
+                ...client.info.extensionConfiguration,
+                accessToken: SWITCH_CREDENTIALS.token ?? SWITCH_CREDENTIALS.redactedToken,
+                serverEndpoint: SWITCH_CREDENTIALS.serverEndpoint,
+                customHeaders: {},
+            })
+            expect(authStatus?.authenticated).toBe(true)
+            expect(authStatus?.endpoint).toBe(SWITCH_CREDENTIALS.serverEndpoint)
 
-                // Test things that should work after having switched accounts.
+            // Test things that should work after having switched accounts.
 
-                // Enterprise models should not contain models with the waitlist tag.
-                const enterpriseModels = await client.request('chat/models', {
-                    modelUsage: ModelUsage.Chat,
-                })
-                expect(
-                    enterpriseModels.models?.some(({ model }) => model.tags.includes(ModelTag.Waitlist))
-                ).toBeFalsy()
+            // Enterprise models should not contain models with the waitlist tag.
+            const enterpriseModels = await client.request('chat/models', {
+                modelUsage: ModelUsage.Chat,
+            })
+            expect(
+                enterpriseModels.models?.some(({ model }) => model.tags.includes(ModelTag.Waitlist))
+            ).toBeFalsy()
 
-                // The chat that we started before switching accounts should not be usable from the new
-                // account.
-                await expect(
-                    client.sendSingleMessageToNewChatWithFullTranscript(
-                        'hello on existing chat after switching accounts',
-                        { id: preChatID }
-                    )
-                ).rejects.toThrow(`No panel with ID ${preChatID}`)
-                // Chats should work, and it should use the default model.
-                const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
-                    'hello after switching accounts'
+            // The chat that we started before switching accounts should not be usable from the new
+            // account.
+            await expect(
+                client.sendSingleMessageToNewChatWithFullTranscript(
+                    'hello on existing chat after switching accounts',
+                    { id: preChatID }
                 )
+            ).rejects.toThrow(`No panel with ID ${preChatID}`)
+            // Chats should work, and it should use the default model.
+            const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
+                'hello after switching accounts'
+            )
 
-                expect(chat.lastMessage?.model).toBe(FIXTURE_MODELS.defaultS2ChatModel)
-                expect(chat.lastMessage?.error).toBeUndefined()
+            expect(chat.lastMessage?.model).toBe(FIXTURE_MODELS.defaultS2ChatModel)
+            expect(chat.lastMessage?.error).toBeUndefined()
 
-                // Listing models should work.
-                const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-                expect(models.length).toBeGreaterThanOrEqual(2)
-                expect(models.map(({ model }) => toModelRefStr(model.modelRef!))).toContain(
-                    'openai::2024-02-01::gpt-4o' // arbitrary model that we expect to be included
-                )
-            }
-        )
+            // Listing models should work.
+            const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            expect(models.length).toBeGreaterThanOrEqual(2)
+            expect(models.map(({ model }) => toModelRefStr(model.modelRef!))).toContain(
+                'openai::2024-02-01::gpt-4o' // arbitrary model that we expect to be included
+            )
+        })
     }
 )

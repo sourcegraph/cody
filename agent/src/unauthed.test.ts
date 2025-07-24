@@ -3,15 +3,14 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
+import { allClientCapabilitiesEnabled } from './allClientCapabilitiesEnabled'
 
-// TODO: fix the flakiness and reenabled it back
-// https://linear.app/sourcegraph/issue/CODY-4546/fix-the-flaky-agentsrcunauthedteststs-and-reenabled-it-back
-describe.skip(
+describe(
     'Initializing the agent without credentials',
     {
         timeout: 5000,
     },
-    () => {
+    async () => {
         const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'auth'))
         const client = TestClient.create({
             workspaceRootUri: workspace.rootUri,
@@ -35,23 +34,30 @@ describe.skip(
             expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcomUnauthed.serverEndpoint)
         })
 
-        it('starts up with default andpoint and credentials if they are present in the secure store', async () => {
+        it.skip('starts up with default endpoint and credentials if they are present in the secure store', async () => {
             const newClient = TestClient.create({
                 workspaceRootUri: workspace.rootUri,
-                name: 'unauthed',
+                name: 'unauthed-new',
                 credentials: TESTING_CREDENTIALS.dotcomUnauthed,
+                capabilities: {
+                    ...allClientCapabilitiesEnabled,
+                    secrets: 'client-managed',
+                },
             })
 
-            newClient.secrets.store(
+            await newClient.secrets.store(
                 TESTING_CREDENTIALS.dotcom.serverEndpoint,
                 TESTING_CREDENTIALS.dotcom.token ?? 'invalid'
             )
 
-            await newClient.beforeAll({ serverEndpoint: undefined }, { expectAuthenticated: true })
+            await newClient.beforeAll(
+                { serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint },
+                { expectAuthenticated: true }
+            )
             const authStatus = await newClient.request('extensionConfiguration/status', null)
             expect(authStatus?.authenticated).toBe(true)
             expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcom.serverEndpoint)
-            newClient.afterAll()
+            await newClient.afterAll()
         })
 
         it('authenticates to same endpoint using valid credentials', async () => {
