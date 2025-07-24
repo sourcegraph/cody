@@ -26,7 +26,7 @@ class AutocompleteCompletionTest : BaseAutocompleteTest() {
     private val fixture =
         BaseIntegrationTextFixture(
             "autocomplete",
-            credentials = TestingCredentials.dotcom,
+            credentials = TestingCredentials.enterprise,
             CodyAgentService.clientCapabilities.copy(
                 globalState = ClientCapabilities.GlobalStateEnum.Stateless))
 
