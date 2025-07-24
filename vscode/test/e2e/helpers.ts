@@ -154,7 +154,8 @@ export const test = base
     })
     .extend<{ server: MockServer }>({
         server: [
-            async (_, use) => {
+            // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
+            async ({}, use) => {
                 MockServer.run(async server => {
                     await use(server)
                 })
