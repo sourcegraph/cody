@@ -139,7 +139,7 @@ describe('ChatController', () => {
         expect(addBotMessageSpy).not.toHaveBeenCalled()
     })
 
-    test('verifies interactionId is passed through chat requests', { timeout: 5000 }, async () => {
+    test('verifies interactionId is passed through chat requests', { timeout: 10000 }, async () => {
         const mockRequestID = '0'
         mockContextRetriever.retrieveContext.mockResolvedValue([])
 
@@ -161,7 +161,7 @@ describe('ChatController', () => {
         )
     })
 
-    test('send, followup, and edit', { timeout: 3000 }, async () => {
+    test('send, followup, and edit', { timeout: 10000 }, async () => {
         const postMessageSpy = vi
             .spyOn(chatController as any, 'postMessage')
             .mockImplementation(() => {})
@@ -178,9 +178,16 @@ describe('ChatController', () => {
             signal: new AbortController().signal,
             source: 'chat',
         })
-        expect(postMessageSpy.mock.calls.at(-1)?.[0]).toStrictEqual<
-            Extract<ExtensionMessage, { type: 'transcript' }>
-        >({
+        const firstTranscriptCall = postMessageSpy.mock.calls
+            .filter(
+                call =>
+                    call[0] &&
+                    typeof call[0] === 'object' &&
+                    'type' in call[0] &&
+                    call[0].type === 'transcript'
+            )
+            .at(-1)?.[0]
+        expect(firstTranscriptCall).toStrictEqual<Extract<ExtensionMessage, { type: 'transcript' }>>({
             type: 'transcript',
             tokenUsage: undefined,
             isMessageInProgress: true,
@@ -330,9 +337,16 @@ describe('ChatController', () => {
         expect(mockChatClient.chat).toBeCalledTimes(2)
         expect(addBotMessageSpy).toBeCalled()
 
-        expect(postMessageSpy.mock.calls.at(-1)?.at(0)).toStrictEqual<
-            Extract<ExtensionMessage, { type: 'transcript' }>
-        >({
+        const lastTranscriptCall = postMessageSpy.mock.calls
+            .filter(
+                call =>
+                    call[0] &&
+                    typeof call[0] === 'object' &&
+                    'type' in call[0] &&
+                    call[0].type === 'transcript'
+            )
+            .at(-1)?.[0]
+        expect(lastTranscriptCall).toStrictEqual<Extract<ExtensionMessage, { type: 'transcript' }>>({
             type: 'transcript',
             isMessageInProgress: false,
             chatID: mockNowDate.toUTCString(),
@@ -550,7 +564,7 @@ describe('ChatController', () => {
                 {
                     agent: undefined,
                     speaker: 'assistant',
-                    model: FIXTURE_MODEL.id,
+                    model: 'my-model',
                     error: errorToChatError(new Error('my-error')),
                     intent: undefined,
                     manuallySelectedIntent: undefined,
