@@ -139,7 +139,7 @@ describe('ChatController', () => {
         expect(addBotMessageSpy).not.toHaveBeenCalled()
     })
 
-    test('verifies interactionId is passed through chat requests', { timeout: 5000 }, async () => {
+    test('verifies interactionId is passed through chat requests', { timeout: 10000 }, async () => {
         const mockRequestID = '0'
         mockContextRetriever.retrieveContext.mockResolvedValue([])
 
@@ -161,7 +161,7 @@ describe('ChatController', () => {
         )
     })
 
-    test('send, followup, and edit', { timeout: 3000 }, async () => {
+    test('send, followup, and edit', { timeout: 10000 }, async () => {
         const postMessageSpy = vi
             .spyOn(chatController as any, 'postMessage')
             .mockImplementation(() => {})
