@@ -165,20 +165,24 @@ export const MentionMenu: FunctionComponent<
                     // Rather keep the provider in place and update the query with repo name so that the provider can
                     // start showing the files instead.
 
+                    const branch = item.mention?.data?.branch
+                    const repoName = item?.mention?.data.repoName
+                    const repoWithBranch = branch ? `${repoName}@${branch}` : repoName
+
                     updateMentionMenuParams({
                         parentItem:
                             item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI
                                 ? {
                                       id: REMOTE_DIRECTORY_PROVIDER_URI,
                                       title: 'Remote Directories',
-                                      queryLabel: 'Enter directory path to search',
-                                      emptyLabel: `No matching directories found in ${item?.mention?.data.repoName} repository`,
+                                      queryLabel: `Enter directory path to search in ${repoWithBranch}`,
+                                      emptyLabel: `No matching directories found in ${repoWithBranch} repository`,
                                   }
                                 : {
                                       id: REMOTE_FILE_PROVIDER_URI,
                                       title: 'Remote Files',
-                                      queryLabel: 'Enter file path to search',
-                                      emptyLabel: `No matching files found in ${item?.mention?.data.repoName} repository`,
+                                      queryLabel: `Enter file path to search in ${repoWithBranch}`,
+                                      emptyLabel: `No matching files found in ${repoWithBranch} repository`,
                                   },
                     })
 
@@ -192,7 +196,11 @@ export const MentionMenu: FunctionComponent<
                         const cursorPosition = selection.anchorOffset
                         const mentionStart = cursorPosition - mentionQuery.text.length
                         const mentionEndIndex = cursorPosition
-                        const textToInsert = `${item.mention?.data?.repoName}:`
+                        // If a branch is selected, include it in the query
+                        const branch = item.mention?.data?.branch
+                        const textToInsert = branch
+                            ? `${item.mention?.data?.repoName}@${branch}:`
+                            : `${item.mention?.data?.repoName}:`
 
                         return [
                             currentText.slice(0, mentionStart) +
@@ -265,7 +273,7 @@ export const MentionMenu: FunctionComponent<
                 ref={ref}
                 data-testid="mention-menu"
             >
-                <CommandList className="!tw-max-h-[unset]">
+                <CommandList className="!tw-max-h-[unset] tw-min-h-[90px]">
                     {providers.length > 0 && (
                         <CommandGroup className={COMMAND_GROUP_CLASS_NAME}>{providers}</CommandGroup>
                     )}
@@ -305,7 +313,7 @@ export const MentionMenu: FunctionComponent<
                                 'tw-bg-accent'
                             )}
                         >
-                            * Sourced from the remote default branch
+                            {getBranchHelpText(data.items, mentionQuery)}
                         </CommandLoading>
                     )}
 
@@ -339,6 +347,55 @@ function commandRowValue(
 
     row satisfies ContextItem
     return contextItemID(row)
+}
+
+export function getBranchHelpText(
+    items: NonNullable<MentionMenuData['items']>,
+    mentionQuery: MentionQuery
+): string {
+    const firstItem = items[0]
+
+    // Type guard for openctx items
+    const isOpenCtxItem = (
+        item: ContextItem
+    ): item is ContextItem & {
+        type: 'openctx'
+        mention?: { data?: { branch?: string; repoName?: string; directoryPath?: string } }
+    } => item.type === 'openctx'
+
+    if (firstItem && isOpenCtxItem(firstItem)) {
+        const openCtxItem = firstItem
+        const repoName = openCtxItem.mention?.data?.repoName
+        const branch = openCtxItem.mention?.data?.branch
+        const directoryPath = openCtxItem.mention?.data?.directoryPath
+
+        // If we're showing branch options (no directoryPath), show branch selection help
+        if (repoName && !directoryPath) {
+            // Check if this is a branch mention (title starts with @)
+            if (firstItem.title?.startsWith('@')) {
+                return '* Select or @ search for a specific branch'
+            }
+        }
+
+        // If we're browsing directories and have branch info, show current branch
+        if (branch) {
+            return `* Sourced from the '${branch}' branch`
+        }
+    }
+
+    // Check if user has specified a branch in the query
+    const atIndex = mentionQuery.text.indexOf('@')
+    if (atIndex !== -1 && atIndex < mentionQuery.text.length - 1) {
+        const afterAt = mentionQuery.text.slice(atIndex + 1)
+        const colonIndex = afterAt.indexOf(':')
+        const branchName = colonIndex !== -1 ? afterAt.slice(0, colonIndex) : afterAt
+
+        if (branchName.trim()) {
+            return `* Sourced from the '${branchName}' branch`
+        }
+    }
+
+    return '* Sourced from the remote default branch'
 }
 
 function getEmptyLabel(

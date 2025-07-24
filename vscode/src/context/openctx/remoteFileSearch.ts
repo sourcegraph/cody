@@ -9,6 +9,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 
+import { getBranchMentions } from './common/branch-mentions'
 import { getRepositoryMentions } from './common/get-repository-mentions'
 import type { OpenCtxProvider } from './types'
 
@@ -32,7 +33,14 @@ export function createRemoteFileProvider(customTitle?: string): OpenCtxProvider 
                 return await getRepositoryMentions(query?.trim() ?? '', REMOTE_FILE_PROVIDER_URI)
             }
 
-            return await getFileMentions(repoName, filePath.trim())
+            // Check if we should show branch suggestions for this repository
+            // Check if repoName contains a branch (repo@branch format from mention menu)
+            if (repoName.includes('@')) {
+                // This is "repo@branch:" - show file listing for this branch
+                const [repoNamePart, branch] = repoName.split('@')
+                return await getFileMentions(repoNamePart, filePath.trim(), branch)
+            }
+            return await getFileBranchMentions(repoName)
         },
 
         async items({ mention }) {
@@ -49,10 +57,15 @@ export function createRemoteFileProvider(customTitle?: string): OpenCtxProvider 
     }
 }
 
-async function getFileMentions(repoName: string, filePath?: string): Promise<Mention[]> {
+async function getFileMentions(
+    repoName: string,
+    filePath?: string,
+    branch?: string
+): Promise<Mention[]> {
     const repoRe = `^${escapeRegExp(repoName)}$`
     const fileRe = filePath ? escapeRegExp(filePath) : '^.*$'
-    const query = `repo:${repoRe} file:${fileRe} type:file count:10`
+    const branchPart = branch ? `@${escapeRegExp(branch)}` : ''
+    const query = `repo:${repoRe}${branchPart} file:${fileRe} type:file count:10`
 
     const { auth } = await currentResolvedConfig()
     const dataOrError = await graphqlClient.searchFileMatches(query)
@@ -79,10 +92,26 @@ async function getFileMentions(repoName: string, filePath?: string): Promise<Men
                     repoName: result.repository.name,
                     rev: result.file.commit.oid,
                     filePath: result.file.path,
+                    branch: branch,
                 },
             } satisfies Mention
         })
         .filter(isDefined)
+}
+
+async function getFileBranchMentions(repoName: string, branchQuery?: string): Promise<Mention[]> {
+    const branchMentions = await getBranchMentions({
+        repoName,
+        providerUri: REMOTE_FILE_PROVIDER_URI,
+        branchQuery,
+    })
+
+    // If no branch mentions found, fallback to file search
+    if (branchMentions.length === 0) {
+        return await getFileMentions(repoName, '')
+    }
+
+    return branchMentions
 }
 
 async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Promise<Item[]> {

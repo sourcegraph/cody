@@ -386,6 +386,8 @@ export function contextItemMentionFromOpenCtxItem(
               title: item.title,
               providerUri: item.providerUri,
               provider: 'openctx',
+              repoName: item.data?.repoName as string | undefined,
+              revision: item.data?.branch as string | undefined,
               mention: {
                   uri: item.uri,
                   data: item.data,
