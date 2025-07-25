@@ -8,14 +8,12 @@ import type {
     CodyIDE,
     ContextItem,
     ContextItemSource,
-    CurrentUserCodySubscription,
     ProcessingStep,
     PromptMode,
     RangeData,
     RequestMessage,
     ResponseMessage,
     SerializedChatMessage,
-    UserProductSubscription,
 } from '@sourcegraph/cody-shared'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
@@ -132,23 +130,11 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          authKind:
-              | 'signin'
-              | 'signout'
-              | 'support'
-              | 'callback'
-              | 'simplified-onboarding'
-              | 'switch'
-              | 'refresh'
+          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'switch' | 'refresh'
           endpoint?: string | undefined | null
           value?: string | undefined | null
-          authMethod?: AuthMethod | undefined | null
       }
     | { command: 'abort' }
-    | {
-          command: 'simplified-onboarding'
-          onboardingKind: 'web-sign-in-token'
-      }
     | {
           command: 'attribution-search'
           snippet: string
@@ -188,14 +174,11 @@ export interface SmartApplyResult {
 export type ExtensionMessage =
     | {
           type: 'config'
-          config: ConfigurationSubsetForWebview & LocalEnv
+          config: ConfigurationSubsetForWebview
           clientCapabilities: ClientCapabilitiesWithLegacyFields
           authStatus: AuthStatus
-          userProductSubscription?: UserProductSubscription | null | undefined
-          isDotComUser: boolean
           workspaceFolderUris: string[]
           siteHasCodyEnabled?: boolean | null | undefined
-          currentUserCodySubscription?: CurrentUserCodySubscription | null | undefined
       }
     | {
           type: 'clientConfig'
@@ -331,14 +314,6 @@ export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
-
-/** The local environment of the editor. */
-export interface LocalEnv {
-    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
-    uiKindIsWeb: boolean
-}
-
-export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 
 // Provide backward compatibility for the old token regex
 // Details: https://docs.sourcegraph.com/dev/security/secret_formats

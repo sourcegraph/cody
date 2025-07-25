@@ -1,14 +1,12 @@
 import React, { useCallback, useMemo } from 'react'
 
 import { type ChatError, FeatureFlag, RateLimitError } from '@sourcegraph/cody-shared'
+import type { ApiPostMessage } from '../Chat'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import type {
     HumanMessageInitialContextInfo as InitialContextInfo,
     PriorHumanMessageInfo,
 } from './cells/messageCell/assistant/AssistantMessageCell'
-
-import type { UserAccountInfo } from '../Chat'
-import type { ApiPostMessage } from '../Chat'
 
 import { Button } from '../components/shadcn/ui/button'
 import { createWebviewTelemetryRecorder } from '../utils/telemetry'
@@ -20,18 +18,11 @@ import styles from './ErrorItem.module.css'
  */
 export const ErrorItem: React.FunctionComponent<{
     error: Omit<ChatError, 'isChatErrorGuard'>
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage?: ApiPostMessage
     humanMessage?: PriorHumanMessageInfo | null
-}> = ({ error, userInfo, postMessage, humanMessage }) => {
+}> = ({ error, postMessage, humanMessage }) => {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
-        return (
-            <RateLimitErrorItem
-                error={error as RateLimitError}
-                userInfo={userInfo}
-                postMessage={postMessage}
-            />
-        )
+        return <RateLimitErrorItem error={error as RateLimitError} postMessage={postMessage} />
     }
     return <RequestErrorItem error={error} humanMessage={humanMessage} />
 }
@@ -97,13 +88,12 @@ export const RequestErrorItem: React.FunctionComponent<{
  */
 const RateLimitErrorItem: React.FunctionComponent<{
     error: RateLimitError
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage: ApiPostMessage
-}> = ({ error, userInfo, postMessage }) => {
+}> = ({ error, postMessage }) => {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
-    const isEnterpriseUser = userInfo.isDotComUser !== true
-    const canUpgrade = error.upgradeIsAvailable && !userInfo?.isCodyProUser
+    const isEnterpriseUser = true
+    const canUpgrade = error.upgradeIsAvailable
     const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(postMessage), [postMessage])
 

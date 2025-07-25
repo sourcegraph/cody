@@ -544,15 +544,13 @@ export async function validateCredentials(
                     signal
                 )
             }
-            if (clientConfig?.userShouldUseEnterprise) {
-                return {
-                    authenticated: false,
-                    endpoint: config.auth.serverEndpoint,
-                    pendingValidation: false,
-                    error: new EnterpriseUserDotComError(
-                        getEnterpriseName(userInfo.primaryEmail?.email || '')
-                    ),
-                }
+            return {
+                authenticated: false,
+                endpoint: config.auth.serverEndpoint,
+                pendingValidation: false,
+                error: new EnterpriseUserDotComError(
+                    getEnterpriseName(userInfo.primaryEmail?.email || '')
+                ),
             }
         }
 

@@ -30,7 +30,7 @@ async function main() {
 
     const osArch = getOSArch()
     const workspace = new TestWorkspace(prototypePath)
-    const credentials = TESTING_CREDENTIALS.dotcom
+    const credentials = TESTING_CREDENTIALS.enterprise
 
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,

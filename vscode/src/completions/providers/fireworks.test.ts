@@ -1,5 +1,5 @@
 import { Observable } from 'observable-fns'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, it, vi } from 'vitest'
 
 import { featureFlagProvider } from '@sourcegraph/cody-shared'
 
@@ -44,69 +44,33 @@ describe('fireworks autocomplete provider', () => {
         },
     } satisfies AutocompleteProviderValuesToAssert
 
-    it('[dotcom] local-editor-settings without model', async () => {
-        const provider = await getAutocompleteProviderFromLocalSettings({
-            providerId: 'fireworks',
-            legacyModel: null,
-            isDotCom: true,
-        })
-
-        assertProviderValues(provider, deepseekAssertion)
-    })
-
     it('[enterprise] local-editor-settings without model', async () => {
         const provider = await getAutocompleteProviderFromLocalSettings({
             providerId: 'fireworks',
             legacyModel: null,
-            isDotCom: false,
         })
 
         assertProviderValues(provider, starcoderAssertion)
     })
 
-    it('[dotcom] local-editor-settings with a model', async () => {
-        const provider = await getAutocompleteProviderFromLocalSettings({
-            providerId: 'fireworks',
-            legacyModel: 'starcoder-hybrid',
-            isDotCom: true,
-        })
-
-        assertProviderValues(provider, starcoderAssertion)
-    })
-
-    it('[dotcom] local-editor-settings with unknown model', async () => {
-        const createCall = getAutocompleteProviderFromLocalSettings({
-            providerId: 'fireworks',
-            legacyModel: 'unknown-model',
-            isDotCom: true,
-        })
-
-        await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(
-            `[Error: Unknown model: 'unknown-model']`
-        )
-    })
-
-    testAutocompleteProvider('server-side-model-config', deepseekAssertion, isDotCom =>
+    testAutocompleteProvider('server-side-model-config', deepseekAssertion, () =>
         getAutocompleteProviderFromServerSideModelConfig({
             modelRef: 'fireworks::v1::deepseek-coder-v2-lite-base',
-            isDotCom,
-            isBYOK: !isDotCom,
+            isBYOK: true,
         })
     )
 
-    testAutocompleteProvider('site-config-cody-llm-configuration', deepseekAssertion, isDotCom =>
+    testAutocompleteProvider('site-config-cody-llm-configuration', deepseekAssertion, () =>
         getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: 'fireworks/deepseek-coder-v2-lite-base',
             provider: 'sourcegraph',
-            isDotCom,
         })
     )
 
-    testAutocompleteProvider('site-config-cody-llm-configuration', starcoderAssertion, isDotCom =>
+    testAutocompleteProvider('site-config-cody-llm-configuration', starcoderAssertion, () =>
         getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: 'fireworks/starcoder-hybrid',
             provider: 'sourcegraph',
-            isDotCom,
         })
     )
 })

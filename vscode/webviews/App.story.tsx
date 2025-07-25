@@ -26,7 +26,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             type: 'config',
             config: {
                 serverEndpoint: 'https://example.com',
-                uiKindIsWeb: false,
                 experimentalNoodle: false,
                 smartApply: false,
                 hasEditCapability: false,
@@ -45,9 +44,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 requiresVerifiedEmail: false,
                 endpoint: 'https://example.com',
             },
-            userProductSubscription: null,
             workspaceFolderUris: [],
-            isDotComUser: true,
         })
         cb({
             type: 'clientConfig',

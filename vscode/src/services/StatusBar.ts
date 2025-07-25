@@ -10,19 +10,16 @@ import {
     type IsIgnored,
     Mutable,
     type ResolvedConfiguration,
-    type UserProductSubscription,
     assertUnreachable,
     authStatus,
     combineLatest,
     contextFiltersProvider,
-    currentUserProductSubscription,
     distinctUntilChanged,
     featureFlagProvider,
     firstValueFrom,
     fromVSCodeEvent,
     logError,
     promise,
-    promiseFactoryToObservable,
     resolvedConfig,
     shareReplay,
 } from '@sourcegraph/cody-shared'
@@ -95,8 +92,7 @@ export class CodyStatusBar implements vscode.Disposable {
         this.errors.changes,
         this.loaders.changes,
         this.ignoreStatus,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag),
-        promiseFactoryToObservable(async () => await currentUserProductSubscription())
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
     ).pipe(
         map((combined): StatusBarState | undefined => {
             return {
@@ -277,8 +273,7 @@ export class CodyStatusBar implements vscode.Disposable {
         errors: ReadonlySet<StatusBarError>,
         loaders: ReadonlySet<StatusBarLoader>,
         ignoreStatus: IsIgnored,
-        autoeditsFeatureFlagEnabled: boolean,
-        userProductSubscription: UserProductSubscription | null
+        autoeditsFeatureFlagEnabled: boolean
     ): Partial<StatusBarState> & Pick<StatusBarState, 'interact' | 'tooltip'> {
         const tags = new Set<InvisibleStatusBarTag>()
 
@@ -331,7 +326,6 @@ export class CodyStatusBar implements vscode.Disposable {
                     errors,
                     isIgnored: ignoreStatus,
                     autoeditsFeatureFlagEnabled,
-                    userProductSubscription,
                     authStatus,
                 }),
             }
@@ -373,7 +367,6 @@ export class CodyStatusBar implements vscode.Disposable {
                     errors,
                     isIgnored: ignoreStatus,
                     autoeditsFeatureFlagEnabled,
-                    userProductSubscription,
                     authStatus,
                 }),
             }
@@ -391,7 +384,6 @@ export class CodyStatusBar implements vscode.Disposable {
                     errors,
                     isIgnored: ignoreStatus,
                     autoeditsFeatureFlagEnabled,
-                    userProductSubscription,
                     authStatus,
                 }),
             }
@@ -404,7 +396,6 @@ export class CodyStatusBar implements vscode.Disposable {
                 errors,
                 isIgnored: ignoreStatus,
                 autoeditsFeatureFlagEnabled,
-                userProductSubscription,
                 authStatus,
             }),
         }
@@ -432,14 +423,12 @@ function interactDefault({
     errors,
     isIgnored,
     autoeditsFeatureFlagEnabled,
-    userProductSubscription,
     authStatus,
 }: {
     config: ResolvedConfiguration
     errors: ReadonlySet<StatusBarError>
     isIgnored: IsIgnored
     autoeditsFeatureFlagEnabled: boolean
-    userProductSubscription: UserProductSubscription | null
     authStatus: AuthStatus
 }): (abort: AbortSignal) => Promise<void> {
     return async (abort: AbortSignal) => {
@@ -525,12 +514,7 @@ function interactDefault({
                 }
             ),
             { label: currentSuggestionMode, kind: vscode.QuickPickItemKind.Separator },
-            await createFeatureEnumChoice(
-                'Code Suggestion Settings',
-                autoeditsFeatureFlagEnabled,
-                userProductSubscription,
-                authStatus
-            ),
+            await createFeatureEnumChoice('Code Suggestion Settings', autoeditsFeatureFlagEnabled),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {
                 label: '$(gear) Cody Extension Settings',
@@ -600,18 +584,9 @@ function interactDefault({
 }
 
 function featureCodySuggestionEnumBuilder(workspaceConfig: vscode.WorkspaceConfiguration) {
-    return async (
-        name: string,
-        autoeditsFeatureFlagEnabled: boolean,
-        userProductSubscription: UserProductSubscription | null,
-        authStatus: AuthStatus
-    ): Promise<StatusBarItem> => {
+    return async (name: string, autoeditsFeatureFlagEnabled: boolean): Promise<StatusBarItem> => {
         const currentSuggestionMode = await getCurrentCodySuggestionMode(workspaceConfig)
-        const { isUserEligible } = isUserEligibleForAutoeditsFeature(
-            autoeditsFeatureFlagEnabled,
-            authStatus,
-            userProductSubscription
-        )
+        const { isUserEligible } = isUserEligibleForAutoeditsFeature(autoeditsFeatureFlagEnabled)
 
         // Build the set of modes to display
         const suggestionModes = [

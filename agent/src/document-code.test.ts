@@ -9,7 +9,7 @@ describe('Document Code', { timeout: 5000 }, () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'document-code',
-        credentials: TESTING_CREDENTIALS.dotcom,
+        credentials: TESTING_CREDENTIALS.enterprise,
     })
 
     beforeAll(async () => {

@@ -15,7 +15,7 @@ test.describe('Demonstrations', () => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
         const cody = uix.cody.Extension.with({ page, workspaceDir })
 
-        polly.server.host(mitmProxy.sourcegraph.dotcom.proxyTarget, () => {
+        polly.server.host(mitmProxy.sourcegraph.enterprise.proxyTarget, () => {
             polly.server
                 .post('/.api/graphql')
                 .filter(req => 'RecordTelemetryEvents' in req.query)
@@ -29,7 +29,7 @@ test.describe('Demonstrations', () => {
                 ...existing,
                 'workbench.colorTheme': 'Default Light Modern',
                 // 'cody.override.authToken': MITM_AUTH_TOKEN_PLACEHOLDER,
-                // 'cody.override.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+                // 'cody.override.serverEndpoint': mitmProxy.sourcegraph.enterprise.endpoint,
             }),
             { workspaceDir }
         )

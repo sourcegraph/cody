@@ -1,9 +1,7 @@
 import {
     CodyAutoSuggestionMode,
     FeatureFlag,
-    currentAuthStatus,
     currentResolvedConfig,
-    currentUserProductSubscription,
     featureFlagProvider,
     storeLastValue,
     telemetryRecorder,
@@ -95,14 +93,8 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
         if (process.env.CODY_TESTING === 'true') {
             return false
         }
-        const authStatus = currentAuthStatus()
-        const productSubscription = await currentUserProductSubscription()
         const autoEditFeatureFlag = this.isAutoEditFeatureFlagEnabled()
-        const { isUserEligible } = isUserEligibleForAutoeditsFeature(
-            autoEditFeatureFlag,
-            authStatus,
-            productSubscription
-        )
+        const { isUserEligible } = isUserEligibleForAutoeditsFeature(autoEditFeatureFlag)
         return isUserEligible
     }
 

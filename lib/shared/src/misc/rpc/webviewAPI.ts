@@ -1,5 +1,5 @@
 import { type Observable, map } from 'observable-fns'
-import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
+import type { AuthStatus, ModelsData, ResolvedConfiguration } from '../..'
 import type { SerializedPromptEditorState } from '../..'
 import type { ChatHistoryType, LightweightChatHistory } from '../../chat/transcript'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
@@ -106,11 +106,6 @@ export interface WebviewToExtensionAPI {
      */
     userHistory(type?: ChatHistoryType): Observable<LightweightChatHistory | UserLocalHistory | null>
 
-    /**
-     * The current user's product subscription information (Cody Free/Pro).
-     */
-    userProductSubscription(): Observable<UserProductSubscription | null>
-
     mcpSettings(): Observable<McpServer[] | null>
 }
 
@@ -160,7 +155,6 @@ export function createExtensionAPI(
         authStatus: proxyExtensionAPI(messageAPI, 'authStatus'),
         transcript: proxyExtensionAPI(messageAPI, 'transcript'),
         userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
-        userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
         repos: proxyExtensionAPI(messageAPI, 'repos'),
         mcpSettings: proxyExtensionAPI(messageAPI, 'mcpSettings'),
     }

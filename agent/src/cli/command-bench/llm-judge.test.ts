@@ -22,8 +22,9 @@ describe.skip('LLM-as-judge', () => {
     })
 
     const llm = new LlmJudge({
-        srcAccessToken: TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
-        srcEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
+        srcAccessToken:
+            TESTING_CREDENTIALS.enterprise.token ?? TESTING_CREDENTIALS.enterprise.redactedToken,
+        srcEndpoint: TESTING_CREDENTIALS.enterprise.serverEndpoint,
     })
 
     it('fix-amazing', async () => {

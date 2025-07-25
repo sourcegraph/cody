@@ -4,7 +4,6 @@ import { expectSignInPage, sidebarSignin } from './common'
 import {
     type ClientConfigSingletonRefetchIntervalOverride,
     type DotcomUrlOverride,
-    type EnterpriseTestOptions,
     type ExpectedV2Events,
     signOut,
     test,
@@ -24,7 +23,6 @@ test.extend<ExpectedV2Events>({
     ],
 })('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
     await expect(sidebar!.getByText('Sign in to Sourcegraph')).toBeVisible()
-    await sidebar!.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
     await sidebar!.getByText('Sourcegraph Instance URL').click()
     await sidebar!.getByPlaceholder('Example: https://instance.').click()
     await sidebar!.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)
@@ -56,9 +54,6 @@ test.extend<ExpectedV2Events>({
 test
     .extend<DotcomUrlOverride>({
         dotcomUrl: SERVER_URL,
-    })
-    .extend<EnterpriseTestOptions>({
-        shouldUseEnterprise: true,
     })
     .extend<ExpectedV2Events>({
         // list of V2 telemetry events we expect this test to log, add to this list as needed
@@ -102,7 +97,6 @@ test
     'logs out the user when userShouldUseEnterprise is set to true',
     async ({ page, sidebar, server }) => {
         await sidebarSignin(page, sidebar, { skipAssertions: true })
-        await server.setUserShouldUseEnterprise(true)
         await expectSignInPage(page)
         await expect(
             page
@@ -131,7 +125,6 @@ test.extend<ExpectedV2Events>({
 })
     .skip('switch account via account dropwdown menu in webview', async ({ page, sidebar }) => {
         await expect(sidebar!.getByText('Sign in to Sourcegraph')).toBeVisible()
-        await sidebar!.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
         await sidebar!.getByText('Sourcegraph Instance URL').click()
         await sidebar!.getByPlaceholder('Example: https://instance.').click()
         await sidebar!.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)

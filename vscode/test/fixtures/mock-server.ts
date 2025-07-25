@@ -176,7 +176,6 @@ class GraphQlMock {
 export class MockServer {
     graphQlMocks: Map<string, GraphQlMock> = new Map();
     availableLLMs: ServerModelConfiguration | undefined = getServerSentModelsMock();
-    userShouldUseEnterprise: boolean = false;
     featureFlags: Map<string, boolean> = new Map([]);
 
     constructor(public readonly express: express.Express) {}
@@ -188,10 +187,6 @@ export class MockServer {
             this.graphQlMocks.set(operation, mock);
         }
         return mock;
-    }
-
-    public setUserShouldUseEnterprise(value: boolean) {
-        this.userShouldUseEnterprise = value;
     }
 
     public setAvailableLLMs(config: ServerModelConfiguration) {
@@ -416,7 +411,6 @@ export class MockServer {
                     attribution,
                     // When server-sent LLMs have been set, we enable the models api
                     modelsAPIEnabled: !!controller.availableLLMs,
-                    userShouldUseEnterprise: controller.userShouldUseEnterprise,
                 }),
             );
         });

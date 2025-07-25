@@ -3,16 +3,14 @@ import {
     type ChatMessage,
     type ClientCapabilitiesWithLegacyFields,
     type CodyNotice,
-    FeatureFlag,
     type Guardrails,
-    type UserProductSubscription,
     type WebviewToExtensionAPI,
     firstValueFrom,
 } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import type React from 'react'
 import { type FunctionComponent, useEffect, useMemo, useRef } from 'react'
-import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
+import type { ConfigurationSubsetForWebview } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
 import { StorageWarningBanner } from './chat/StorageWarningBanner'
@@ -25,18 +23,15 @@ import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { HistoryTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { useUserAccountInfo } from './utils/useConfig'
-import { useFeatureFlag } from './utils/useFeatureFlags'
 import { TabViewContext } from './utils/useTabView'
 
 interface CodyPanelProps {
     view: View
     setView: (view: View) => void
     configuration: {
-        config: LocalEnv & ConfigurationSubsetForWebview
+        config: ConfigurationSubsetForWebview
         clientCapabilities: ClientCapabilitiesWithLegacyFields
         authStatus: AuthStatus
-        isDotComUser: boolean
-        userProductSubscription?: UserProductSubscription | null | undefined
     }
     errorMessages: string[]
     chatEnabled: boolean
@@ -67,7 +62,7 @@ interface CodyPanelProps {
 export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     view,
     setView,
-    configuration: { config, clientCapabilities, isDotComUser },
+    configuration: { config, clientCapabilities },
     errorMessages,
     setErrorMessages,
     chatEnabled,
@@ -95,11 +90,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
             [api.mcpSettings]
         )
     )
-    // workspace upgrade eligibility should be that the flag is set, is on dotcom and only has one account. This prevents enterprise customers that are logged into multiple endpoints from seeing the CTA
-    const isWorkspacesUpgradeCtaEnabled =
-        useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA) &&
-        isDotComUser &&
-        config.endpointHistory?.length === 1
+
     useEffect(() => {
         onExternalApiReady?.(externalAPI)
     }, [onExternalApiReady, externalAPI])
@@ -146,7 +137,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         currentView={view}
                         setView={setView}
                         endpointHistory={config.endpointHistory ?? []}
-                        isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
+                        isWorkspacesUpgradeCtaEnabled={false}
                         showOpenInEditor={!!config?.multipleWebviewsEnabled}
                     />
                 )}
@@ -171,7 +162,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             showIDESnippetActions={showIDESnippetActions}
                             showWelcomeMessage={showWelcomeMessage}
                             setView={setView}
-                            isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
+                            isWorkspacesUpgradeCtaEnabled={false}
                         />
                     )}
                     {view === View.History && (

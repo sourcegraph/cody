@@ -1090,24 +1090,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             throw id
         })
 
-        this.registerAuthenticatedRequest('graphql/currentUserIsPro', async () => {
-            const res = await graphqlClient.getCurrentUserCodyProEnabled()
-            if (res instanceof Error) {
-                throw res
-            }
-
-            return Boolean(res?.codyProEnabled)
-        })
-
-        this.registerAuthenticatedRequest('graphql/getCurrentUserCodySubscription', async () => {
-            const res = await graphqlClient.getCurrentUserCodySubscription()
-            if (res instanceof Error) {
-                throw res
-            }
-
-            return res
-        })
-
         this.registerAuthenticatedRequest('telemetry/recordEvent', async event => {
             telemetryRecorder.recordEvent(
                 // 👷 HACK: We have no control over what gets sent over JSON RPC,

@@ -7,8 +7,6 @@ import { mockLocalStorage } from '../../services/LocalStorageProvider'
 
 import {
     type AutocompleteProviderValuesToAssert,
-    assertProviderValues,
-    getAutocompleteProviderFromLocalSettings,
     getAutocompleteProviderFromServerSideModelConfig,
     getAutocompleteProviderFromSiteConfigCodyLLMConfiguration,
     getRequestParamsWithoutMessages,
@@ -44,54 +42,9 @@ describe('anthropic autocomplete provider', () => {
         },
     } satisfies AutocompleteProviderValuesToAssert
 
-    it('[dotcom] local-editor-settings without model', async () => {
-        const provider = await getAutocompleteProviderFromLocalSettings({
-            providerId: 'anthropic',
-            legacyModel: null,
-            isDotCom: true,
-        })
-
-        expect(provider.id).toBe('anthropic')
-        expect(provider.legacyModel).toBe('claude-instant-1.2')
-        expect(getRequestParamsWithoutMessages(provider)).toStrictEqual(
-            claudeInstantAssertion.requestParams
-        )
-    })
-
-    it('[dotcom] local-editor-settings with model', async () => {
-        const provider = await getAutocompleteProviderFromLocalSettings({
-            providerId: 'anthropic',
-            legacyModel: 'claude-3-haiku-20240307',
-            isDotCom: true,
-        })
-
-        expect(provider.id).toBe('anthropic')
-        // The local editor settings model is ignored for now by the Anthropic provider.
-        expect(provider.legacyModel).toBe('claude-instant-1.2')
-        expect(getRequestParamsWithoutMessages(provider)).toStrictEqual(
-            claudeInstantAssertion.requestParams
-        )
-    })
-
-    it('[dotcom] server-side-model-config', async () => {
-        const provider = await getAutocompleteProviderFromServerSideModelConfig({
-            modelRef: 'anthropic::2023-06-01::claude-3-haiku-20240307',
-            isDotCom: true,
-            isBYOK: false,
-        })
-
-        // Still uses claude instant on dotcom.
-        const { providerId, legacyModel, requestParams } = claudeInstantAssertion
-
-        expect(provider.id).toBe(providerId)
-        expect(provider.legacyModel).toBe(legacyModel)
-        expect(getRequestParamsWithoutMessages(provider)).toStrictEqual(requestParams)
-    })
-
     it('[enterprise] CLOUD server-side-model-config', async () => {
         const provider = await getAutocompleteProviderFromServerSideModelConfig({
             modelRef: 'anthropic::2023-06-01::claude-3-haiku-20240307',
-            isDotCom: false,
             isBYOK: false,
         })
 
@@ -105,7 +58,6 @@ describe('anthropic autocomplete provider', () => {
     it('[enterprise] BYOK server-side-model-config', async () => {
         const provider = await getAutocompleteProviderFromServerSideModelConfig({
             modelRef: 'anthropic::2023-06-01::claude-3-haiku-20240307',
-            isDotCom: false,
             isBYOK: true,
         })
 
@@ -120,21 +72,10 @@ describe('anthropic autocomplete provider', () => {
         })
     })
 
-    it('[dotcom] site-config-cody-llm-configuration', async () => {
-        const provider = await getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
-            completionModel: 'anthropic/claude-instant-1.2',
-            provider: 'sourcegraph',
-            isDotCom: true,
-        })
-
-        assertProviderValues(provider, claudeInstantAssertion)
-    })
-
     it('[enterprise] site-config-cody-llm-configuration', async instanceType => {
         const provider = await getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: 'anthropic/claude-instant-1.2',
             provider: 'sourcegraph',
-            isDotCom: false,
         })
 
         const { providerId, legacyModel, requestParams } = claudeInstantAssertion
@@ -144,21 +85,10 @@ describe('anthropic autocomplete provider', () => {
         expect(getRequestParamsWithoutMessages(provider)).toStrictEqual(requestParams)
     })
 
-    it('[dotcom] site-config-cody-llm-configuration special case for google hosted models', async () => {
-        const provider = await getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
-            completionModel: 'google/claude-instant-1.2',
-            provider: 'sourcegraph',
-            isDotCom: true,
-        })
-
-        assertProviderValues(provider, claudeInstantAssertion)
-    })
-
     it('[enterprise] site-config-cody-llm-configuration special case for google hosted models', async instanceType => {
         const provider = await getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: 'google/claude-instant-1.2',
             provider: 'sourcegraph',
-            isDotCom: false,
         })
 
         const { providerId, legacyModel, requestParams } = claudeInstantAssertion
@@ -172,7 +102,6 @@ describe('anthropic autocomplete provider', () => {
         const createCall = getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: 'anthropic.claude-instant-1.2',
             provider: 'sourcegraph',
-            isDotCom: false,
         })
 
         await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -184,7 +113,6 @@ describe('anthropic autocomplete provider', () => {
         const createCall = getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: 'anthropic/',
             provider: 'sourcegraph',
-            isDotCom: false,
         })
 
         await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -196,7 +124,6 @@ describe('anthropic autocomplete provider', () => {
         const createCall = getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: '/claude-instant-1.2',
             provider: 'sourcegraph',
-            isDotCom: false,
         })
 
         await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -223,42 +150,10 @@ describe('anthropic/aws-bedrock autocomplete provider', () => {
         },
     } satisfies AutocompleteProviderValuesToAssert
 
-    it('[dotcom] local-editor-settings without model', async () => {
-        const provider = await getAutocompleteProviderFromLocalSettings({
-            providerId: 'aws-bedrock',
-            legacyModel: null,
-            isDotCom: true,
-        })
-
-        expect(provider.id).toBe('anthropic')
-        expect(provider.legacyModel).toBe('claude-instant-1.2')
-        expect(getRequestParamsWithoutMessages(provider)).toStrictEqual(
-            claudeInstantAssertion.requestParams
-        )
-    })
-
-    it('[dotcom] site-config-cody-llm-configuration', async () => {
-        const provider = await getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
-            completionModel: 'anthropic.claude-instant-1.2',
-            provider: 'aws-bedrock',
-            isDotCom: true,
-        })
-
-        assertProviderValues(provider, {
-            ...claudeInstantAssertion,
-            requestParams: {
-                ...claudeInstantAssertion.requestParams,
-                // The model ID is ignored by BYOK clients
-                model: undefined,
-            },
-        })
-    })
-
     it('[enterprise] site-config-cody-llm-configuration', async () => {
         const provider = await getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: 'anthropic.claude-instant-1.2',
             provider: 'aws-bedrock',
-            isDotCom: false,
         })
 
         const { providerId, legacyModel, requestParams } = claudeInstantAssertion
@@ -276,7 +171,6 @@ describe('anthropic/aws-bedrock autocomplete provider', () => {
         const createCall = getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: 'anthropic/claude-instant-1.2',
             provider: 'aws-bedrock',
-            isDotCom: false,
         })
 
         await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -288,7 +182,6 @@ describe('anthropic/aws-bedrock autocomplete provider', () => {
         const createCall = getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: 'anthropic.',
             provider: 'aws-bedrock',
-            isDotCom: false,
         })
 
         await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -300,7 +193,6 @@ describe('anthropic/aws-bedrock autocomplete provider', () => {
         const createCall = getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: 'hello-world',
             provider: 'aws-bedrock',
-            isDotCom: false,
         })
 
         await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(

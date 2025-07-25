@@ -33,7 +33,7 @@ test.describe('Webview Selector', () => {
             s => ({
                 ...s,
                 'cody.override.authToken': MITM_AUTH_TOKEN_PLACEHOLDER,
-                'cody.override.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+                'cody.override.serverEndpoint': mitmProxy.sourcegraph.enterprise.endpoint,
             }),
             { workspaceDir }
         )

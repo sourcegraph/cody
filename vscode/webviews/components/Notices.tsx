@@ -1,4 +1,4 @@
-import { CodyIDE, type CodyNotice, isWorkspaceInstance } from '@sourcegraph/cody-shared'
+import { type CodyNotice, isWorkspaceInstance } from '@sourcegraph/cody-shared'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     ArrowLeftRightIcon,
@@ -87,15 +87,6 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
             }
             return CODY_DEPRECATION_MESSAGES.ENTERPRISE_STARTER_WITHOUT_CODY
         }
-        if (user.isCodyProUser) {
-            return CODY_DEPRECATION_MESSAGES.PRO_USER
-        }
-        // For free users, check if they have a subscription
-        const hasSubscription =
-            user.currentUserCodySubscription !== null && user.currentUserCodySubscription !== undefined
-        if (hasSubscription && user.currentUserCodySubscription?.status !== 'CANCELED') {
-            return CODY_DEPRECATION_MESSAGES.FREE_USER_WITH_CODY
-        }
         return CODY_DEPRECATION_MESSAGES.FREE_USER_WITHOUT_CODY
     }, [user])
 
@@ -117,7 +108,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
              */
             {
                 id: 'CodyDeprecation',
-                isVisible: user.isDotComUser || isWorkspaceInstance(user.user.endpoint),
+                isVisible: isWorkspaceInstance(user.user.endpoint),
                 content: (
                     <NoticeContent
                         id="CodyDeprecation"
@@ -145,10 +136,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
              */
             {
                 id: 'DogfoodS2',
-                isVisible:
-                    user.isDotComUser &&
-                    user.user.organizations?.some(org => org.name === 'sourcegraph') &&
-                    user.IDE !== CodyIDE.Web,
+                isVisible: false,
                 content: (
                     <NoticeContent
                         id="DogfoodS2"

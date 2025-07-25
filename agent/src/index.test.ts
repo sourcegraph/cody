@@ -11,8 +11,6 @@ import {
     type SerializedChatTranscript,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
-import { ResponseError } from 'vscode-jsonrpc'
-import { CodyJsonRpcErrorCode } from '../../vscode/src/jsonrpc/CodyJsonRpcErrorCode'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { logTestingData } from '../../vscode/test/fixtures/mock-server'
 import { TestClient } from './TestClient'
@@ -51,13 +49,7 @@ describe('Agent', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
-        credentials: TESTING_CREDENTIALS.dotcom,
-    })
-
-    const rateLimitedClient = TestClient.create({
-        workspaceRootUri: workspace.rootUri,
-        name: 'rateLimitedClient',
-        credentials: TESTING_CREDENTIALS.dotcomProUserRateLimited,
+        credentials: TESTING_CREDENTIALS.enterprise,
     })
 
     const mockContextItems: ContextItem[] = []
@@ -108,11 +100,10 @@ describe('Agent', () => {
         await client.request('testing/reset', null)
     })
 
-    const sumUri = workspace.file('src', 'sum.ts')
     const animalUri = workspace.file('src', 'animal.ts')
     const squirrelUri = workspace.file('src', 'squirrel.ts')
 
-    async function setChatModel(model = 'google::v1::gemini-1.5-flash'): Promise<string> {
+    async function setChatModel(model = 'google::v1::gemini-1.5-pro-002'): Promise<string> {
         // Use the same chat model regardless of the server response (in case it changes on the
         // remote endpoint so we don't need to regenerate all the recordings).
         const freshChatID = await client.request('chat/new', null)
@@ -128,7 +119,7 @@ describe('Agent', () => {
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
         // change.
-        const initModelName = 'anthropic::2024-10-22::claude-3-5-sonnet-latest'
+        const initModelName = 'anthropic::2024-10-22::claude-sonnet-4-latest'
         const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
         expect(models[0].model.id).toStrictEqual(initModelName)
 
@@ -137,7 +128,7 @@ describe('Agent', () => {
             // Redacted format of an invalid access token (just random string). Tests fail in replay mode
             // if we don't use the redacted format here.
             accessToken: 'REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909',
-            serverEndpoint: 'https://sourcegraph.com/',
+            serverEndpoint: 'https://demo.sourcegraph.com/',
             customHeaders: {},
         })
         expect(invalid?.authenticated).toBeFalsy()
@@ -173,32 +164,13 @@ describe('Agent', () => {
         //    source agent/scripts/export-cody-http-recording-tokens.sh
         //
         // If you don't have access to this private file then you need to ask
-        expect(valid.username).toStrictEqual('sourcegraphbot9k-fnwmu')
+        expect(valid.username).toStrictEqual('codytesting')
 
         // telemetry assertion, to validate the expected events fired during the test run
         // Do not remove this assertion, and instead update the expectedEvents list above
         expect(await exportedTelemetryEvents(client)).toEqual(
             expect.arrayContaining(['cody.auth:connected', 'cody.auth.login:firstEver'])
         )
-    }, 10_000)
-
-    it('graphql/getCurrentUserCodySubscription', async () => {
-        const currentUserCodySubscription = await client.request(
-            'graphql/getCurrentUserCodySubscription',
-            null
-        )
-        expect(currentUserCodySubscription).toMatchInlineSnapshot(`
-          {
-            "applyProRateLimits": true,
-            "currentPeriodEndAt": "2025-01-14T22:11:32Z",
-            "currentPeriodStartAt": "2024-12-14T22:11:32Z",
-            "plan": "PRO",
-            "status": "ACTIVE",
-          }
-        `)
-        // telemetry assertion, to validate the expected events fired during the test run
-        // Do not remove this assertion, and instead update the expectedEvents list above
-        expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
     }, 10_000)
 
     describe('Chat', () => {
@@ -382,7 +354,7 @@ describe('Agent', () => {
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
             {
-                await client.request('chat/setModel', { id, model: 'google::v1::gemini-1.5-flash' })
+                await client.request('chat/setModel', { id, model: 'google::v1::gemini-1.5-pro-002' })
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
@@ -401,7 +373,7 @@ describe('Agent', () => {
             const id = await client.request('chat/new', null)
             await client.request('chat/setModel', {
                 id,
-                model: 'google::v1::gemini-1.5-flash',
+                model: 'google::v1::gemini-1.5-pro-002',
             })
             await client.sendMessage(
                 id,
@@ -440,7 +412,7 @@ describe('Agent', () => {
                     const id = await client.request('chat/new', null)
                     await client.request('chat/setModel', {
                         id,
-                        model: 'google::v1::gemini-1.5-flash',
+                        model: 'google::v1::gemini-1.5-pro-002',
                     })
                     await client.sendMessage(
                         id,
@@ -486,7 +458,7 @@ describe('Agent', () => {
                 const id = await client.request('chat/new', null)
                 await client.request('chat/setModel', {
                     id,
-                    model: 'google::v1::gemini-1.5-flash',
+                    model: 'google::v1::gemini-1.5-pro-002',
                 })
                 // edits by index replaces message at index, and erases all subsequent messages
                 await client.sendMessage(
@@ -661,54 +633,6 @@ describe('Agent', () => {
             // Do not remove this assertion, and instead update the expectedEvents list above
             expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
         })
-    })
-
-    describe('RateLimitedAgent', () => {
-        // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
-        beforeAll(async () => {
-            const serverInfo = await rateLimitedClient.initialize()
-
-            expect(serverInfo.authStatus?.status).toEqual('authenticated')
-            if (serverInfo.authStatus?.status !== 'authenticated') {
-                throw new Error('unreachable')
-            }
-            expect(serverInfo.authStatus.username).toStrictEqual('sourcegraphcodyclients-1-efapb')
-        }, 10_000)
-
-        // Skipped because Polly is failing to record the HTTP rate-limit error
-        // response. Keeping the code around in case we need to debug these in
-        // the future. Use the following command to run this test:
-        // - First, mark this test as `it.only`
-        // - Next, run `CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts`
-        it.skip('chat/submitMessage (RateLimitError)', async () => {
-            const lastMessage = await rateLimitedClient.sendSingleMessageToNewChat('sqrt(9)')
-            // Intentionally not a snapshot assertion because we should never
-            // automatically update 'RateLimitError' to become another value.
-            expect(lastMessage?.error?.name).toStrictEqual('RateLimitError')
-        }, 30_000)
-
-        // Skipped because Polly is failing to record the HTTP rate-limit error
-        // response. Keeping the code around in case we need to debug these in
-        // the future. Use the following command to run this test:
-        // - First, mark this test as `it.only`
-        // - Next, run `CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts`
-        it.skip('autocomplete/trigger (RateLimitError)', async () => {
-            let code = 0
-            try {
-                await rateLimitedClient.openFile(sumUri)
-                const result = await rateLimitedClient.autocompleteText()
-                console.log({ result })
-            } catch (error) {
-                if (error instanceof ResponseError) {
-                    code = error.code
-                }
-            }
-            expect(code).toEqual(CodyJsonRpcErrorCode.RateLimitError)
-        }, 30_000)
-        afterAll(async () => {
-            await rateLimitedClient.shutdownAndExit()
-            // Long timeout because to allow Polly.js to persist HTTP recordings
-        }, 30_000)
     })
 
     afterAll(async () => {

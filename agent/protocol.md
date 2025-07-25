@@ -149,14 +149,7 @@ shutdown: [null, null]
 
 ```ts
 'graphql/currentUserId': [null, string]
-```
-<h2 id="graphql_currentUserIsPro"><a href="#graphql_currentUserIsPro" name="graphql_currentUserIsPro"><code>graphql/currentUserIsPro</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
-<p>Request sent from the client to client server.</p>
 
-
-```ts
-'graphql/currentUserIsPro': [null, boolean]
-```
 <h2 id="featureFlags_getFeatureFlag"><a href="#featureFlags_getFeatureFlag" name="featureFlags_getFeatureFlag"><code>featureFlags/getFeatureFlag</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
 <p>Request sent from the client to client server.</p>
 
@@ -164,13 +157,7 @@ shutdown: [null, null]
 ```ts
 'featureFlags/getFeatureFlag': [{ flagName: string; }, boolean | null]
 ```
-<h2 id="graphql_getCurrentUserCodySubscription"><a href="#graphql_getCurrentUserCodySubscription" name="graphql_getCurrentUserCodySubscription"><code>graphql/getCurrentUserCodySubscription</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
-<p>Request sent from the client to client server.</p>
 
-
-```ts
-'graphql/getCurrentUserCodySubscription': [null, CurrentUserCodySubscription | null]
-```
 <h2 id="telemetry_recordEvent"><a href="#telemetry_recordEvent" name="telemetry_recordEvent"><code>telemetry/recordEvent</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
 <p>Request sent from the client to client server.</p>
 <p>Description: Record telemetry events.</p>

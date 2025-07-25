@@ -8,10 +8,7 @@ import 'node:https'
 import { setTimeout as setPromiseTimeout } from 'node:timers/promises'
 import onHeaders from 'on-headers'
 import type { TestContext, WorkerContext } from '.'
-import type {
-    DOTCOM_TESTING_CREDENTIALS,
-    ENTERPRISE_TESTING_CREDENTIALS,
-} from '../../../../src/testutils/testing-credentials'
+import type { ENTERPRISE_TESTING_CREDENTIALS } from '../../../../src/testutils/testing-credentials'
 import { TESTING_CREDENTIALS } from '../../../../src/testutils/testing-credentials'
 import {
     MITM_AUTH_TOKEN_PLACEHOLDER,
@@ -33,11 +30,6 @@ const DEFAULT_FLOOR_RESPONSE_TIME = 10 //ms
 export interface MitMProxy {
     readonly missingRecording: boolean
     sourcegraph: {
-        dotcom: {
-            readonly endpoint: string
-            readonly proxyTarget: string
-            authName: keyof typeof DOTCOM_TESTING_CREDENTIALS
-        }
         enterprise: {
             readonly endpoint: string
             readonly proxyTarget: string
@@ -65,15 +57,14 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                 [testInfo.parallelIndex * 2, 2],
                 validWorkerOptions.mitmServerPortRange
             )
-            const [sgDotComPort, sgEnterprisePort] = allocatedPorts
+            const [sgEnterprisePort] = allocatedPorts
 
             //TODO: cleanup as class
             const state: {
                 authName: {
                     enterprise: MitMProxy['sourcegraph']['enterprise']['authName']
-                    dotcom: MitMProxy['sourcegraph']['dotcom']['authName']
                 }
-            } = { authName: { enterprise: 's2', dotcom: 'dotcom' } }
+            } = { authName: { enterprise: 's2' } }
 
             let missingRecordingTriggered = false
             const config: MitMProxy = {
@@ -81,18 +72,6 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                     return missingRecordingTriggered
                 },
                 sourcegraph: {
-                    dotcom: {
-                        get authName() {
-                            return state.authName.dotcom
-                        },
-                        set authName(value: MitMProxy['sourcegraph']['dotcom']['authName']) {
-                            state.authName.dotcom = value
-                        },
-                        endpoint: `http://127.0.0.1:${sgDotComPort}`,
-                        get proxyTarget() {
-                            return TESTING_CREDENTIALS[state.authName.dotcom].serverEndpoint
-                        },
-                    },
                     enterprise: {
                         get authName() {
                             return state.authName.enterprise
@@ -138,10 +117,7 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                 testInfo.errors.push(err)
             }
 
-            const proxyReqHandlers = [
-                sourcegraphProxyReqHandler('dotcom', config),
-                sourcegraphProxyReqHandler('enterprise', config),
-            ]
+            const proxyReqHandlers = [sourcegraphProxyReqHandler('enterprise', config)]
             const proxyMiddleware = createProxyMiddleware({
                 changeOrigin: true,
                 ejectPlugins: true,
@@ -153,9 +129,6 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                     try {
                         //TODO: convert this to a regex instead
                         const hostPrefix = `http://${req.headers.host}`
-                        if (hostPrefix.startsWith(config.sourcegraph.dotcom.endpoint)) {
-                            return new URL(req.url ?? '', config.sourcegraph.dotcom.proxyTarget)
-                        }
                         if (hostPrefix.startsWith(config.sourcegraph.enterprise.endpoint)) {
                             return new URL(req.url ?? '', config.sourcegraph.enterprise.proxyTarget)
                         }
@@ -308,10 +281,7 @@ function delayMiddleware(proxy: MitMProxy): RequestHandler {
     }
 }
 
-function sourcegraphProxyReqHandler(
-    variant: 'enterprise' | 'dotcom',
-    config: MitMProxy
-): ProxyReqHandler {
+function sourcegraphProxyReqHandler(variant: 'enterprise', config: MitMProxy): ProxyReqHandler {
     const handler: ProxyReqHandler = (proxyReq, req, res, options) => {
         if (config.sourcegraph[variant].proxyTarget.startsWith((options.target as URL).origin)) {
             const name = `sourcegraph.${variant}`

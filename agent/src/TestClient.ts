@@ -104,8 +104,8 @@ export function setupRecording(): void {
                 stdio: 'inherit',
                 env: {
                     ...process.env,
-                    SRC_ACCESS_TOKEN: TESTING_CREDENTIALS.dotcom.token,
-                    SERVER_ENDPOINT: TESTING_CREDENTIALS.dotcom.serverEndpoint,
+                    SRC_ACCESS_TOKEN: TESTING_CREDENTIALS.enterprise.token,
+                    SERVER_ENDPOINT: TESTING_CREDENTIALS.enterprise.serverEndpoint,
                 },
             })
         } catch {

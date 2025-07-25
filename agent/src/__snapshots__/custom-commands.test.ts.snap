@@ -1,11 +1,11 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`Custom Commands > commands/custom, chat command, open tabs context 1`] = `
-"Here are all the files you've shared:
+"Here are the files you have shared with me:
 
-• src/example1.ts
-• src/example2.ts
-• src/example3.ts"
+• example3.ts
+• example2.ts
+• example1.ts"
 `;
 
 exports[`Custom Commands > commands/custom, edit command, edit mode 1`] = `

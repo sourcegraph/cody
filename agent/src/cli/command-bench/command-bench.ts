@@ -19,7 +19,7 @@ import {
 import { localStorage } from '../../../../vscode/src/services/LocalStorageProvider'
 import { createOrUpdateTelemetryRecorderProvider } from '../../../../vscode/src/services/telemetry-v2'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
-import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
+import { TESTING_CREDENTIALS } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
@@ -297,9 +297,9 @@ export const benchCommand = new commander.Command('bench')
     .option('--insecure-tls', 'Allow insecure server connections when using SSL', false)
     .action(async (options: CodyBenchOptions) => {
         if (!options.srcAccessToken) {
-            const { token } = dotcomCredentials()
+            const { token } = TESTING_CREDENTIALS.enterprise
             if (!token) {
-                console.error('environment variable SRC_ACCESS_TOKEN must be non-empty')
+                console.error('environment variable SRC_ENTERPRISE_ACCESS_TOKEN must be non-empty')
                 process.exit(1)
             }
             options.srcAccessToken = token

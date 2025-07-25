@@ -65,9 +65,6 @@ export interface CodyClientConfig {
     // models are available.
     modelsAPIEnabled: boolean
 
-    // Whether the user should sign in to an enterprise instance.
-    userShouldUseEnterprise: boolean
-
     // List of global instance-level cody notice/banners (set only by admins in global
     // instance configuration file
     notices: CodyNotice[]
@@ -93,7 +90,6 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     attribution: 'permissive',
     smartContextWindowEnabled: true,
     modelsAPIEnabled: true,
-    userShouldUseEnterprise: false,
     notices: [],
     siteVersion: undefined,
     omniBoxEnabled: false,
@@ -286,7 +282,6 @@ export class ClientConfigSingleton {
 
             // Things that did not exist before logically default to disabled.
             modelsAPIEnabled: false,
-            userShouldUseEnterprise: false,
             notices: [],
             omniBoxEnabled: false,
             codeSearchEnabled: false,

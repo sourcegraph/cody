@@ -70,7 +70,7 @@ export const ModelSelection: StoryObj<typeof meta> = {
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple,
         models: FIXTURE_MODELS,
-        userInfo: { ...FIXTURE_USER_ACCOUNT_INFO, isCodyProUser: true },
+        userInfo: { ...FIXTURE_USER_ACCOUNT_INFO },
     },
 }
 

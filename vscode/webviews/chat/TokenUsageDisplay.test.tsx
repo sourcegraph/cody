@@ -11,7 +11,6 @@ const mockConfig = (
         endpoint: 'https://sourcegraph.example.com',
         authenticated: true,
     } as any,
-    userProductSubscription: null,
     config: {
         internalDebugTokenUsage,
         smartApply: true,
@@ -23,7 +22,6 @@ const mockConfig = (
         serverEndpoint: 'https://sourcegraph.example.com',
     } as any,
     clientCapabilities: {} as any,
-    isDotComUser: true,
 })
 
 describe('TokenUsageDisplay', () => {

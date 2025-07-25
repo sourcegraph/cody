@@ -34,38 +34,31 @@ describe('unstable-openai autocomplete provider', () => {
             },
         } satisfies AutocompleteProviderValuesToAssert
 
-        testAutocompleteProvider('local-editor-settings', unstableOpenaiAssertion, isDotCom =>
+        testAutocompleteProvider('local-editor-settings', unstableOpenaiAssertion, () =>
             getAutocompleteProviderFromLocalSettings({
                 providerId: 'unstable-openai',
                 legacyModel: 'gpt-4o',
-                isDotCom,
             })
         )
 
-        testAutocompleteProvider('server-side-model-config', unstableOpenaiAssertion, isDotCom =>
+        testAutocompleteProvider('server-side-model-config', unstableOpenaiAssertion, () =>
             getAutocompleteProviderFromServerSideModelConfig({
                 modelRef: 'unstable-openai::2024-02-01::gpt-4o',
-                isDotCom,
-                isBYOK: !isDotCom,
+                isBYOK: true,
             })
         )
 
-        testAutocompleteProvider(
-            'site-config-cody-llm-configuration',
-            unstableOpenaiAssertion,
-            isDotCom =>
-                getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
-                    provider: 'sourcegraph',
-                    completionModel: 'unstable-openai/gpt-4o',
-                    isDotCom,
-                })
+        testAutocompleteProvider('site-config-cody-llm-configuration', unstableOpenaiAssertion, () =>
+            getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
+                provider: 'sourcegraph',
+                completionModel: 'unstable-openai/gpt-4o',
+            })
         )
 
         it('[enterprise] site-config-cody-llm-configuration BYOK', async () => {
             const provider = await getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
                 provider: 'openai',
                 completionModel: undefined,
-                isDotCom: false,
             })
 
             expect(provider.id).toBe(unstableOpenaiAssertion.providerId)
@@ -89,27 +82,24 @@ describe('unstable-openai autocomplete provider', () => {
             },
         } satisfies AutocompleteProviderValuesToAssert
 
-        testAutocompleteProvider('local-editor-settings', azureOpenaiAssertion, isDotCom =>
+        testAutocompleteProvider('local-editor-settings', azureOpenaiAssertion, () =>
             getAutocompleteProviderFromLocalSettings({
                 providerId: 'azure-openai',
                 legacyModel: 'gpt-4o-mini-test',
-                isDotCom,
             })
         )
 
-        testAutocompleteProvider('server-side-model-config', azureOpenaiAssertion, isDotCom =>
+        testAutocompleteProvider('server-side-model-config', azureOpenaiAssertion, () =>
             getAutocompleteProviderFromServerSideModelConfig({
                 modelRef: 'azure-openai::v1::gpt-4o-mini-test',
-                isDotCom,
-                isBYOK: !isDotCom,
+                isBYOK: true,
             })
         )
 
-        testAutocompleteProvider('site-config-cody-llm-configuration', azureOpenaiAssertion, isDotCom =>
+        testAutocompleteProvider('site-config-cody-llm-configuration', azureOpenaiAssertion, () =>
             getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
                 provider: 'sourcegraph',
                 completionModel: 'azure-openai/gpt-4o-mini-test',
-                isDotCom,
             })
         )
 
@@ -117,7 +107,6 @@ describe('unstable-openai autocomplete provider', () => {
             const provider = await getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
                 provider: 'azure-openai',
                 completionModel: undefined,
-                isDotCom: false,
             })
 
             expect(provider.id).toBe(azureOpenaiAssertion.providerId)

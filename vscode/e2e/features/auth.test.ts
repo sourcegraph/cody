@@ -16,13 +16,12 @@ test.describe('Auth', () => {
         const [sidebar] = await uix.cody.WebView.all({ page }, { atLeast: 1 })
         // Open the sign in form
         await expect(sidebar.content.getByText('Sign in to Sourcegraph')).toBeVisible()
-        await sidebar.content.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
         // Instance URL
         await sidebar.content.getByText('Sourcegraph Instance URL').click()
         await sidebar.content.getByPlaceholder('Example: https://instance.').click()
         await sidebar.content
             .getByPlaceholder('Example: https://instance.')
-            .fill(mitmProxy.sourcegraph.dotcom.endpoint)
+            .fill(mitmProxy.sourcegraph.enterprise.endpoint)
         // Access Token
         await sidebar.content.getByText('Access Token (Optional)').click()
         await sidebar.content.getByPlaceholder('Access token...').fill(MITM_AUTH_TOKEN_PLACEHOLDER)

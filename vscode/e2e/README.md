@@ -603,7 +603,7 @@ test('DotCom', async ({ page, mitmProxy, vscodeUI, workspaceDir }) => {
                 // We're not actually setting the token. Instead we insert a
                 // placeholder that the MitM server will swap out for us.
                 'cody.override.authToken': MITM_AUTH_TOKEN_PLACEHOLDER,
-                'cody.override.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+                'cody.override.serverEndpoint': mitmProxy.sourcegraph.enterprise.endpoint,
             }),
             { workspaceDir }
         )

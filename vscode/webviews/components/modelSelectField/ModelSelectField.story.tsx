@@ -65,30 +65,8 @@ export default meta
 
 type Story = StoryObj<typeof ModelSelectField>
 
-export const FreeUser: Story = {
-    args: {
-        userInfo: {
-            isDotComUser: true,
-            isCodyProUser: false,
-        },
-    },
-}
-
-export const ProUser: Story = {
-    args: {
-        userInfo: {
-            isDotComUser: true,
-            isCodyProUser: true,
-        },
-    },
-}
-
 export const EnterpriseUser: Story = {
     args: {
-        userInfo: {
-            isDotComUser: false,
-            isCodyProUser: false,
-        },
         serverSentModelsEnabled: true,
     },
 }
@@ -96,10 +74,6 @@ export const EnterpriseUser: Story = {
 // The model selector's value is always Claude 3.7 Sonnet in agentic mode
 export const AgenticMode: Story = {
     args: {
-        userInfo: {
-            isDotComUser: true,
-            isCodyProUser: true,
-        },
         intent: 'agentic',
     },
 }

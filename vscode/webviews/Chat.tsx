@@ -6,7 +6,6 @@ import type {
     AuthenticatedAuthStatus,
     ChatMessage,
     CodyIDE,
-    CurrentUserCodySubscription,
     Guardrails,
     Model,
     PromptString,
@@ -228,15 +227,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 }
 
 export interface UserAccountInfo {
-    isDotComUser: boolean
-    isCodyProUser: boolean
     user: Pick<
         AuthenticatedAuthStatus,
         'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail' | 'organizations'
     >
     IDE: CodyIDE
     siteHasCodyEnabled?: boolean | null
-    currentUserCodySubscription?: CurrentUserCodySubscription | null
 }
 
 export type ApiPostMessage = (message: any) => void

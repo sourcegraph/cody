@@ -6,8 +6,6 @@ import {
     ModelUsage,
     PromptString,
     type Rule,
-    checkIfEnterpriseUser,
-    currentUserProductSubscription,
     displayLineRange,
     firstValueFrom,
     modelsService,
@@ -91,13 +89,9 @@ export class EditInputFlow implements vscode.Disposable {
     }
 
     public async init(): Promise<void> {
-        const sub = await currentUserProductSubscription()
-        this.isEnterpriseUser = await checkIfEnterpriseUser()
-        this.isCodyPro = Boolean(sub && !sub.userCanUpgrade)
-
         this.modelAvailability = await modelsService.getModelsAvailabilityStatus(ModelUsage.Edit)
         const modelOptions = this.modelAvailability.map(it => it.model)
-        this.modelItems = getModelOptionItems(modelOptions, this.isCodyPro, this.isEnterpriseUser)
+        this.modelItems = getModelOptionItems(modelOptions, this.isCodyPro, true)
         this.activeModelItem = this.modelItems.find(item => item.model === this.activeModel)
         this.showModelSelector = modelOptions.length > 1
 

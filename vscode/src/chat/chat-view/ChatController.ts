@@ -12,8 +12,6 @@ import {
     type CodyClientConfig,
     type ContextItem,
     ContextItemSource,
-    type CurrentUserCodySubscription,
-    DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
     FeatureFlag,
@@ -29,13 +27,11 @@ import {
     type SourcegraphGuardrailsClient,
     addMessageListenersForExtensionAPI,
     authStatus,
-    cenv,
     clientCapabilities,
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
     currentResolvedConfig,
-    currentUserProductSubscription,
     distinctUntilChanged,
     extractContextFromTraceparent,
     featureFlagProvider,
@@ -72,7 +68,6 @@ import {
     telemetryRecorder,
     tracer,
     truncatePromptString,
-    userProductSubscription,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
@@ -89,10 +84,6 @@ import { Observable, Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
-import {
-    closeAuthProgressIndicator,
-    startAuthProgressIndicator,
-} from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getCurrentUserId } from '../../auth/user'
 import { getContextFileFromUri } from '../../commands/context/file-path'
@@ -111,7 +102,6 @@ import { listPromptTags, mergedPromptsAndLegacyCommands } from '../../prompts/pr
 import { workspaceFolderForRepo } from '../../repository/remoteRepos'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
 import { authProvider } from '../../services/AuthProvider'
-import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { secretStorage } from '../../services/SecretStorageProvider'
 import { TraceSender } from '../../services/open-telemetry/trace-sender'
@@ -130,7 +120,6 @@ import { getEmptyOrDefaultContextObservable } from '../initialContext'
 import type {
     ConfigurationSubsetForWebview,
     ExtensionMessage,
-    LocalEnv,
     SmartApplyResult,
     WebviewMessage,
 } from '../protocol'
@@ -201,8 +190,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly extensionClient: ChatControllerOptions['extensionClient']
     private readonly guardrails: SourcegraphGuardrailsClient
 
-    private readonly startTokenReceiver: typeof startTokenReceiver | undefined
-
     private lastKnownTokenUsage:
         | {
               completionTokens?: number
@@ -225,7 +212,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         chatClient,
         editor,
         guardrails,
-        startTokenReceiver,
         contextRetriever,
         extensionClient,
     }: ChatControllerOptions) {
@@ -238,7 +224,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.chatBuilder = new ChatBuilder(undefined)
 
         this.guardrails = guardrails
-        this.startTokenReceiver = startTokenReceiver
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -520,52 +505,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         authProvider.refresh()
                         break
                     }
-                    if (message.authKind === 'simplified-onboarding') {
-                        const endpoint = DOTCOM_URL.href
-
-                        let tokenReceiverUrl: string | undefined = undefined
-                        closeAuthProgressIndicator()
-                        startAuthProgressIndicator()
-                        tokenReceiverUrl = await this.startTokenReceiver?.(
-                            endpoint,
-                            async credentials => {
-                                closeAuthProgressIndicator()
-                                const authStatus = await authProvider.validateAndStoreCredentials(
-                                    credentials,
-                                    'store-if-valid'
-                                )
-                                telemetryRecorder.recordEvent(
-                                    'cody.auth.fromTokenReceiver.web',
-                                    'succeeded',
-                                    {
-                                        metadata: {
-                                            success: authStatus.authenticated ? 1 : 0,
-                                        },
-                                        billingMetadata: {
-                                            product: 'cody',
-                                            category: 'billable',
-                                        },
-                                    }
-                                )
-                                if (!authStatus.authenticated) {
-                                    void vscode.window.showErrorMessage(
-                                        'Authentication failed. Please check your token and try again.'
-                                    )
-                                }
-                            }
-                        )
-
-                        const authProviderSimplified = new AuthProviderSimplified()
-                        const authMethod = message.authMethod || 'dotcom'
-                        const successfullyOpenedUrl = await authProviderSimplified.openExternalAuthUrl(
-                            authMethod,
-                            tokenReceiverUrl
-                        )
-                        if (!successfullyOpenedUrl) {
-                            closeAuthProgressIndicator()
-                        }
-                        break
-                    }
                     if (
                         (message.authKind === 'signin' || message.authKind === 'callback') &&
                         message.endpoint
@@ -615,31 +554,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     await vscode.commands.executeCommand(`cody.auth.${message.authKind}`)
                     break
                 }
-                case 'simplified-onboarding': {
-                    if (message.onboardingKind === 'web-sign-in-token') {
-                        void vscode.window
-                            .showInputBox({ prompt: 'Enter web sign-in token' })
-                            .then(async token => {
-                                if (!token) {
-                                    return
-                                }
-                                const authStatus = await authProvider.validateAndStoreCredentials(
-                                    {
-                                        serverEndpoint: DOTCOM_URL.href,
-                                        credentials: { token },
-                                    },
-                                    'store-if-valid'
-                                )
-                                if (!authStatus.authenticated) {
-                                    void vscode.window.showErrorMessage(
-                                        'Authentication failed. Please check your token and try again.'
-                                    )
-                                }
-                            })
-                        break
-                    }
-                    break
-                }
                 case 'log': {
                     const logger = message.level === 'debug' ? logDebug : logError
                     logger(message.filterLabel, message.message)
@@ -674,7 +588,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.extensionClient.capabilities?.edit === 'enabled'
     }
 
-    private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
+    private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview> {
         const { configuration, auth } = await currentResolvedConfig()
         const [experimentalPromptEditorEnabled, internalAgentModeEnabled] = await Promise.all([
             firstValueFrom(
@@ -688,13 +602,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
-        const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         const endpoints = localStorage.getEndpointHistory() ?? []
         const attribution =
             (await ClientConfigSingleton.getInstance().getConfig())?.attribution ?? GuardrailsMode.Off
 
         return {
-            uiKindIsWeb,
             serverEndpoint: auth.serverEndpoint,
             endpointHistory: [...endpoints],
             experimentalNoodle: configuration.experimentalNoodle,
@@ -733,17 +645,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         // Fetch additional user data if authenticated and not in testing mode
         let siteHasCodyEnabled: boolean | null = null
-        let currentUserCodySubscription: CurrentUserCodySubscription | null = null
 
         if (authStatus.authenticated && !isCodyTesting) {
             try {
-                const [siteResult, subscriptionResult] = await Promise.all([
-                    graphqlClient.getSiteHasCodyEnabled(),
-                    graphqlClient.getCurrentUserCodySubscription(),
-                ])
+                const [siteResult] = await Promise.all([graphqlClient.getSiteHasCodyEnabled()])
 
                 siteHasCodyEnabled = isError(siteResult) ? null : siteResult
-                currentUserCodySubscription = isError(subscriptionResult) ? null : subscriptionResult
             } catch (error) {
                 // Log error but don't fail the config send
                 console.error('Failed to fetch additional user data', error)
@@ -755,11 +662,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             config: configForWebview,
             clientCapabilities: clientCapabilities(),
             authStatus: authStatus,
-            userProductSubscription: await currentUserProductSubscription(),
             workspaceFolderUris,
-            isDotComUser: isDotCom(authStatus),
             siteHasCodyEnabled,
-            currentUserCodySubscription,
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
@@ -1872,10 +1776,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         type === ChatHistoryType.Full
                             ? chatHistory.changes
                             : chatHistory.lightweightChanges,
-                    userProductSubscription: () =>
-                        userProductSubscription.pipe(
-                            map(value => (value === pendingOperation ? null : value))
-                        ),
                     // Existing tools endpoint - update to include MCP tools
                     mcpSettings: () => {
                         return featureFlagProvider

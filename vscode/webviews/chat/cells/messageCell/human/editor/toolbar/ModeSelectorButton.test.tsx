@@ -49,7 +49,6 @@ describe('ModeSelectorField', () => {
             smartApply: true,
             hasEditCapability: false,
             allowEndpointChange: false,
-            uiKindIsWeb: false,
             webviewType: 'sidebar',
             multipleWebviewsEnabled: true,
             attribution: 'none',

@@ -343,7 +343,6 @@ export {
     promise,
     type ReadonlyDeep,
 } from './utils'
-export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
 export * from './auth/tokens'
 export * from './auth/referral'
@@ -421,13 +420,6 @@ export * from './singletons'
 export * from './auth/authStatus'
 export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
 export * from './editor/editorState'
-export {
-    currentUserProductSubscription,
-    checkIfEnterpriseUser,
-    type UserProductSubscription,
-    cachedUserProductSubscription,
-    userProductSubscription,
-} from './sourcegraph-api/userProductSubscription'
 export {
     siteVersion,
     currentSiteVersion,
