@@ -138,7 +138,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 orientation="vertical"
                 className={styles.outerContainer}
             >
-                <Notices user={user} instanceNotices={instanceNotices} />
+                <Notices instanceNotices={instanceNotices} />
                 {/* Hide tab bar in editor chat panels. */}
                 {config.webviewType !== 'editor' && (
                     <TabsBar
