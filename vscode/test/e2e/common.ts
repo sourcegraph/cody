@@ -19,8 +19,6 @@ export const sidebarSignin = async (
     }
     await focusSidebar(page)
 
-    await sidebar.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
-
     await sidebar.getByText('Sourcegraph Instance URL').click()
     await sidebar.getByPlaceholder('Example: https://instance.').click()
     await sidebar.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)
