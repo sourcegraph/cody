@@ -85,3 +85,104 @@ export class Dog implements Animal {
 }
 \`\`\`"
 `;
+
+exports[`Agent > Commands > commands/explain 1`] = `
+"**\`Animal\` Interface (src/animal.ts)**
+
+The code defines an interface called \`Animal\`.  In programming, an interface acts as a blueprint or contract. It specifies what properties and methods an object must have if it claims to be of a certain type.  Think of it like a template or a checklist.
+
+In this case, the \`Animal\` interface defines what it means to be an "animal" in the context of this program.  It doesn't create any actual animals, but it lays out the requirements for any object that wants to be considered an animal.
+
+The \`Animal\` interface states that any object implementing it must have the following:
+
+1. **\`name\`:** This property must be a string and will presumably store the name of the animal.  It doesn't take any input directly; the value will be assigned when an actual animal object is created.
+
+2. **\`makeAnimalSound()\`:** This is a method, which is like a function associated with an object. It doesn't take any input, but it must return a string, which we can assume will be the sound the animal makes. For example, a dog object might return "Woof!"
+
+3. **\`isMammal\`:** This property must be a boolean (true or false) indicating whether the animal is a mammal. Again, the value is assigned when creating a specific animal object.
+
+This code doesn't produce any output on its own. Its purpose is to define a structure.  Later in the program, you would create specific animal types (like \`Dog\`, \`Cat\`, \`Bird\`) that would implement this interface.  This means those animal types would promise to have a \`name\`, a \`makeAnimalSound()\` method, and an \`isMammal\` property.  This helps organize and ensure consistency in the code by defining a common structure for different types of animals."
+`;
+
+exports[`Agent > Commands > commands/smell 1`] = `
+"1. **Add optional \`species\` property:** Consider adding an optional \`species\` property of type string. This would allow for more specific categorization of animals.
+
+   \`\`\`typescript:src/animal.ts
+   export interface Animal {
+       name: string;
+       species?: string;
+       makeAnimalSound(): string;
+       isMammal: boolean;
+   }
+   \`\`\`
+
+   *Benefit:* Provides more detailed information about the animal.  Useful for filtering or grouping animals by species.
+
+2. **Consider an optional \`age\` property:**  Adding an optional \`age\` property (perhaps a number or a more complex type representing age ranges) could be beneficial depending on how this interface is used.
+
+   \`\`\`typescript:src/animal.ts
+   export interface Animal {
+       name: string;
+       species?: string;
+       age?: number;
+       makeAnimalSound(): string;
+       isMammal: boolean;
+   }
+   \`\`\`
+
+   *Benefit:*  Allows tracking of animal age, potentially useful for simulations or other applications.
+
+3. **Clarify \`makeAnimalSound\` return type:** While a string is a reasonable return type, consider if a more specific type might be beneficial. For instance, if sounds are always represented by specific onomatopoeia like "Woof" or "Meow", an enum or a union of string literals might offer better type safety.  If more complex sound data is possible, consider a different return type. This is context-dependent.
+
+   \`\`\`typescript:src/animal.ts
+   export interface Animal {
+       name: string;
+       species?: string;
+       age?: number;
+       makeAnimalSound(): "Woof" | "Meow" | "Chirp"; // Example
+       isMammal: boolean;
+   }
+   \`\`\`
+
+   *Benefit:*  Improves type safety and code clarity by explicitly defining the allowed sounds.  Aids in refactoring and reduces the risk of unexpected values.
+
+
+4. **Document the interface:**  Add JSDoc comments to explain the purpose of the interface and each of its members.
+
+   \`\`\`typescript:src/animal.ts
+   /**
+    * Represents an animal.
+    */
+   export interface Animal {
+       /**
+        * The name of the animal.
+        */
+       name: string;
+       /**
+        * The species of the animal (optional).
+        */
+       species?: string;
+       /**
+        * The age of the animal in years (optional).
+        */
+       age?: number;
+       /**
+        * Returns the sound the animal makes.
+        */
+       makeAnimalSound(): string;
+       /**
+        * Whether the animal is a mammal.
+        */
+       isMammal: boolean;
+   }
+
+   \`\`\`
+
+   *Benefit:*  Improves code readability and maintainability. Makes it easier for other developers (and your future self) to understand how to use the interface.
+
+5. **Consider more specific properties instead of generic \`makeAnimalSound()\`:** Depending on the use case, instead of a generic sound method, it might be more beneficial to have specific properties related to how an animal communicates, such as \`canBark\`, \`canSing\`, \`canRoar\` etc.  This avoids forcing every implementation to provide a string representation even if it's not relevant to the context.
+
+   *Benefit:* Can lead to a more descriptive and flexible model.
+
+Overall, the provided code is simple and generally well-structured. The suggested improvements aim to enhance its clarity, maintainability, and potential for broader application by adding detail and context."
+`;

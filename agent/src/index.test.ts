@@ -103,7 +103,7 @@ describe('Agent', () => {
     const animalUri = workspace.file('src', 'animal.ts')
     const squirrelUri = workspace.file('src', 'squirrel.ts')
 
-    async function setChatModel(model = 'google::v1::gemini-1.5-flash'): Promise<string> {
+    async function setChatModel(model = 'google::v1::gemini-1.5-pro-002'): Promise<string> {
         // Use the same chat model regardless of the server response (in case it changes on the
         // remote endpoint so we don't need to regenerate all the recordings).
         const freshChatID = await client.request('chat/new', null)
@@ -119,7 +119,7 @@ describe('Agent', () => {
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
         // change.
-        const initModelName = 'anthropic::2024-10-22::claude-3-5-sonnet-latest'
+        const initModelName = 'anthropic::2024-10-22::claude-sonnet-4-latest'
         const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
         expect(models[0].model.id).toStrictEqual(initModelName)
 
@@ -128,7 +128,7 @@ describe('Agent', () => {
             // Redacted format of an invalid access token (just random string). Tests fail in replay mode
             // if we don't use the redacted format here.
             accessToken: 'REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909',
-            serverEndpoint: 'https://sourcegraph.com/',
+            serverEndpoint: 'https://demo.sourcegraph.com/',
             customHeaders: {},
         })
         expect(invalid?.authenticated).toBeFalsy()
@@ -164,7 +164,7 @@ describe('Agent', () => {
         //    source agent/scripts/export-cody-http-recording-tokens.sh
         //
         // If you don't have access to this private file then you need to ask
-        expect(valid.username).toStrictEqual('sourcegraphbot9k-fnwmu')
+        expect(valid.username).toStrictEqual('codytesting')
 
         // telemetry assertion, to validate the expected events fired during the test run
         // Do not remove this assertion, and instead update the expectedEvents list above
@@ -354,7 +354,7 @@ describe('Agent', () => {
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
             {
-                await client.request('chat/setModel', { id, model: 'google::v1::gemini-1.5-flash' })
+                await client.request('chat/setModel', { id, model: 'google::v1::gemini-1.5-pro-002' })
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
@@ -373,7 +373,7 @@ describe('Agent', () => {
             const id = await client.request('chat/new', null)
             await client.request('chat/setModel', {
                 id,
-                model: 'google::v1::gemini-1.5-flash',
+                model: 'google::v1::gemini-1.5-pro-002',
             })
             await client.sendMessage(
                 id,
@@ -412,7 +412,7 @@ describe('Agent', () => {
                     const id = await client.request('chat/new', null)
                     await client.request('chat/setModel', {
                         id,
-                        model: 'google::v1::gemini-1.5-flash',
+                        model: 'google::v1::gemini-1.5-pro-002',
                     })
                     await client.sendMessage(
                         id,
@@ -458,7 +458,7 @@ describe('Agent', () => {
                 const id = await client.request('chat/new', null)
                 await client.request('chat/setModel', {
                     id,
-                    model: 'google::v1::gemini-1.5-flash',
+                    model: 'google::v1::gemini-1.5-pro-002',
                 })
                 // edits by index replaces message at index, and erases all subsequent messages
                 await client.sendMessage(

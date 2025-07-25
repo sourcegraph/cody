@@ -5,7 +5,6 @@ import { AUTH_STATUS_FIXTURE_AUTHED, type AuthStatus } from '../auth/types'
 import { CLIENT_CAPABILITIES_FIXTURE, mockClientCapabilities } from '../configuration/clientCapabilities'
 import type { ResolvedConfiguration } from '../configuration/resolver'
 import { featureFlagProvider } from '../experimentation/FeatureFlagProvider'
-import { FeatureFlag } from '../experimentation/FeatureFlagProvider'
 import {
     firstValueFrom,
     readValuesFrom,
@@ -14,7 +13,6 @@ import {
 } from '../misc/observable'
 import { pendingOperation, skipPendingOperation } from '../misc/observableOperation'
 import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
-import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import type { PartialDeep } from '../utils'
 import {
@@ -453,106 +451,8 @@ describe('syncModels', () => {
         expect(result.preferences.selected.chat).toBe(undefined)
         expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
     })
-
-    describe('model selection based on user tier and feature flags', () => {
-        const serverHaiku: ServerModel = {
-            modelRef: 'anthropic::unknown::claude-3-5-haiku',
-            displayName: 'Haiku',
-            modelName: 'anthropic.claude-3-5-haiku',
-            capabilities: ['chat'],
-            category: 'balanced' as ModelCategory,
-            status: 'stable',
-            tier: 'free' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 7000,
-                maxOutputTokens: 4000,
-            },
-        }
-        const serverSonnet: ServerModel = {
-            modelRef: 'anthropic::unknown::sonnet',
-            displayName: 'Sonnet',
-            modelName: 'anthropic.claude-3-5-sonnet',
-            capabilities: ['chat'],
-            category: 'balanced' as ModelCategory,
-            status: 'stable',
-            tier: 'enterprise' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        }
-        const SERVER_MODELS: ServerModelConfiguration = {
-            schemaVersion: '0.0',
-            revision: '-',
-            providers: [],
-            models: [serverHaiku, serverSonnet],
-            defaultModels: {
-                chat: serverSonnet.modelRef,
-                fastChat: serverSonnet.modelRef,
-                codeCompletion: serverSonnet.modelRef,
-                unlimitedChat: serverSonnet.modelRef,
-            },
-        }
-        const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
-
-        async function getModelResult(featureFlagEnabled: boolean, userCanUpgrade: boolean) {
-            // set the feature flag
-            if (featureFlagEnabled) {
-                vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation(
-                    (flagName: FeatureFlag, _forceRefresh?: boolean) =>
-                        flagName === FeatureFlag.CodyChatDefaultToClaude35Haiku
-                            ? Observable.of(featureFlagEnabled)
-                            : Observable.of(false)
-                )
-            } else {
-                vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation(
-                    (flagName: FeatureFlag, _forceRefresh?: boolean) =>
-                        flagName === FeatureFlag.CodyChatDefaultToClaude35Haiku
-                            ? Observable.of(featureFlagEnabled)
-                            : Observable.of(true)
-                )
-            }
-
-            return firstValueFrom(
-                syncModels({
-                    resolvedConfig: Observable.of({
-                        auth: { serverEndpoint: DOTCOM_URL.toString() },
-                        configuration: {},
-                        clientState: { modelPreferences: {} },
-                    } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration),
-                    authStatus: Observable.of({
-                        ...AUTH_STATUS_FIXTURE_AUTHED,
-                        endpoint: DOTCOM_URL.toString(),
-                        userCanUpgrade,
-                    }),
-                    configOverwrites: Observable.of(null),
-                    clientConfig: Observable.of({
-                        modelsAPIEnabled: true,
-                    } satisfies Partial<CodyClientConfig> as CodyClientConfig),
-                    fetchServerSideModels_: mockFetchServerSideModels,
-                }).pipe(skipPendingOperation())
-            )
-        }
-
-        it('sets Haiku as default chat model for free users when feature flag is enabled', async () => {
-            const result = await getModelResult(true, true)
-            expect(result.preferences.defaults.chat?.includes('claude-3-5-haiku')).toBe(true)
-            expect(result.primaryModels.some(model => model.id.includes('claude-3-5-haiku'))).toBe(true)
-        })
-
-        it('sets Sonnet as default chat model for free tier users when feature flag is disabled', async () => {
-            const result = await getModelResult(false, true)
-            expect(result.preferences.defaults.chat?.includes('sonnet')).toBe(true)
-            expect(result.primaryModels.some(model => model.id.includes('sonnet'))).toBe(true)
-        })
-
-        it('sets Sonnet as default chat model for pro tier users', async () => {
-            const result = await getModelResult(true, false)
-            expect(result.preferences.defaults.chat?.includes('sonnet')).toBe(true)
-            expect(result.primaryModels.some(model => model.id.includes('sonnet'))).toBe(true)
-        })
-    })
 })
+
 describe('maybeAdjustContextWindows', () => {
     it('works', () => {
         const defaultMaxInputTokens = 8192

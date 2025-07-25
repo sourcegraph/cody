@@ -32,27 +32,24 @@ describe('google autocomplete provider', () => {
         },
     } satisfies AutocompleteProviderValuesToAssert
 
-    testAutocompleteProvider('local-editor-settings', starChatAssertion, isDotCom =>
+    testAutocompleteProvider('local-editor-settings', starChatAssertion, () =>
         getAutocompleteProviderFromLocalSettings({
             providerId: 'google',
             legacyModel: 'gemini-1.5-flash-latest',
-            isDotCom,
         })
     )
 
-    testAutocompleteProvider('server-side-model-config', starChatAssertion, isDotCom =>
+    testAutocompleteProvider('server-side-model-config', starChatAssertion, () =>
         getAutocompleteProviderFromServerSideModelConfig({
             modelRef: 'google::v1::gemini-1.5-flash-latest',
-            isDotCom,
-            isBYOK: !isDotCom,
+            isBYOK: true,
         })
     )
 
-    testAutocompleteProvider('site-config-cody-llm-configuration', starChatAssertion, isDotCom =>
+    testAutocompleteProvider('site-config-cody-llm-configuration', starChatAssertion, () =>
         getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             provider: 'sourcegraph',
             completionModel: 'google/gemini-1.5-flash-latest',
-            isDotCom,
         })
     )
 })

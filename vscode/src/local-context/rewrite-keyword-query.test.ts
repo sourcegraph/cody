@@ -48,17 +48,19 @@ describe('rewrite-query', () => {
     }
 
     check(ps`Where is authentication router defined?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"authentication router"`)
+        expect(expanded).toMatchInlineSnapshot(`"Where is authentication router defined?"`)
     )
 
-    check(ps`scan tokens in C++`, expanded => expect(expanded).toMatchInlineSnapshot(`"token scan C++"`))
+    check(ps`scan tokens in C++`, expanded =>
+        expect(expanded).toMatchInlineSnapshot(`"scan tokens in C++"`)
+    )
 
     check(ps`parse file with tree-sitter`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"tree-sitter parse"`)
+        expect(expanded).toMatchInlineSnapshot(`"parse file with tree-sitter"`)
     )
 
     check(ps`type Zoekt struct {`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"type Zoekt struct"`)
+        expect(expanded).toMatchInlineSnapshot(`"type Zoekt struct {"`)
     )
 
     check(
@@ -71,26 +73,44 @@ describe('rewrite-query', () => {
 
 \tmu       sync.RWMute
 `,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"type Zoekt struct"`)
+        expanded =>
+            expect(expanded).toMatchInlineSnapshot(`
+          "type Zoekt struct {
+          	Client zoekt.Searcher
+
+          	// DisableCache when true prevents caching of Client.List. Useful in
+          	// tests.
+          	DisableCache bool
+
+          	mu       sync.RWMute
+          "
+        `)
     )
 
     check(ps`C'est ou la logique pour recloner les dépôts?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"reclone repository"`)
+        expect(expanded).toMatchInlineSnapshot(`"C'est ou la logique pour recloner les dépôts?"`)
     )
 
     check(ps`Wie kann ich eine neue Datenbankmigration definieren?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"database migration create"`)
+        expect(expanded).toMatchInlineSnapshot(`"Wie kann ich eine neue Datenbankmigration definieren?"`)
     )
 
     check(
         ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`,
         expanded =>
-            expect(expanded).toMatchInlineSnapshot(`"context window limit budget @-mentions search"`)
+            expect(expanded).toMatchInlineSnapshot(
+                `"Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?"`
+            )
     )
 
     check(
         ps`parse file with tree-sitter. follow these rules:\n*use the Google Go style guide\n*panic if parsing fails`,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"tree-sitter parsing error handling"`)
+        expanded =>
+            expect(expanded).toMatchInlineSnapshot(`
+          "parse file with tree-sitter. follow these rules:
+          *use the Google Go style guide
+          *panic if parsing fails"
+        `)
     )
 
     afterAll(async () => {

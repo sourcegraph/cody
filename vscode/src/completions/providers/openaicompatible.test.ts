@@ -18,18 +18,6 @@ describe('openaicompatible autocomplete provider', () => {
         mockLocalStorage()
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     })
-
-    const anthropicParams = {
-        providerId: 'anthropic',
-        legacyModel: 'claude-instant-1.2',
-        requestParams: {
-            maxTokensToSample: 256,
-            temperature: 0.5,
-            timeoutMs: 7000,
-            topK: 0,
-        },
-    } satisfies AutocompleteProviderValuesToAssert
-
     const openaicompatibleParams = {
         providerId: 'openaicompatible',
         legacyModel: 'llama-3.1-70b-versatile',
@@ -45,7 +33,6 @@ describe('openaicompatible autocomplete provider', () => {
         const createCall = getAutocompleteProviderFromLocalSettings({
             providerId: 'openaicompatible',
             legacyModel: 'gpt-4o',
-            isDotCom: true,
         })
 
         await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -54,26 +41,9 @@ describe('openaicompatible autocomplete provider', () => {
         )
     })
 
-    it('[dotcom] server-side-model-config', async () => {
-        const provider = await getAutocompleteProviderFromServerSideModelConfig({
-            modelRef: 'groq::v1::llama-3.1-70b-versatile',
-            isDotCom: true,
-            isBYOK: false,
-        })
-
-        // Switches to the first available model, because `llama-3.1-70b-versatile` is
-        // the enterprise tier model and cannot be used on DotCom.
-        const { providerId, legacyModel, requestParams } = anthropicParams
-
-        expect(provider.id).toBe(providerId)
-        expect(provider.legacyModel).toBe(legacyModel)
-        expect(getRequestParamsWithoutMessages(provider)).toMatchObject(requestParams)
-    })
-
     it('[enterprise] server-side-model-config', async () => {
         const provider = await getAutocompleteProviderFromServerSideModelConfig({
             modelRef: 'groq::v1::llama-3.1-70b-versatile',
-            isDotCom: false,
             isBYOK: true,
         })
         const { providerId, legacyModel, requestParams } = openaicompatibleParams
@@ -87,7 +57,6 @@ describe('openaicompatible autocomplete provider', () => {
         const createCall = getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             provider: 'sourcegraph',
             completionModel: 'openaicompatible/gpt-4o',
-            isDotCom: true,
         })
 
         await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(

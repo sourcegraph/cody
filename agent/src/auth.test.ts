@@ -25,18 +25,15 @@ describe(
             ...TESTING_CREDENTIALS.s2,
         }
         const FIXTURE_MODELS = {
-            // Set this to the default chat model on dotcom.
-            dotcomDefaultChatModel: 'anthropic::2024-10-22::claude-3-5-sonnet-latest',
-
             // Set this to the default chat model on S2. (It's OK if it's the same as
             // dotcomDefaultChatModel.)
-            defaultS2ChatModel: 'anthropic::2024-10-22::claude-3-5-sonnet-latest',
+            defaultS2ChatModel: 'anthropic::2024-10-22::claude-sonnet-4-latest',
 
-            // Set this to 2 model IDs that both (1) exist on dotcom and S2 but (2) are NOT the same as
-            // dotcomDefaultChatModel or defaultS2ChatModel.
-            differentFromDotcomAndS2DefaultChatModel: [
-                'anthropic::2023-06-01::claude-3-haiku',
-                'google::v1::gemini-1.5-pro',
+            // Set this to 2 model IDs that both (1) exist on S2 but (2) are NOT the same as
+            // defaultS2ChatModel.
+            differentFromS2DefaultChatModel: [
+                'anthropic::2024-10-22::claude-3-5-haiku-latest',
+                'google::v1::gemini-1.5-pro-002',
             ],
         }
 
@@ -81,7 +78,7 @@ describe(
             const preChatID = await client.request('chat/new', null)
             await client.request('chat/setModel', {
                 id: preChatID,
-                model: FIXTURE_MODELS.differentFromDotcomAndS2DefaultChatModel[0],
+                model: FIXTURE_MODELS.differentFromS2DefaultChatModel[0],
             })
 
             const authStatus = await client.request('extensionConfiguration/change', {
@@ -98,7 +95,7 @@ describe(
             await expect(
                 client.request('chat/setModel', {
                     id: preChatID,
-                    model: FIXTURE_MODELS.differentFromDotcomAndS2DefaultChatModel[1],
+                    model: FIXTURE_MODELS.differentFromS2DefaultChatModel[1],
                 })
             ).rejects.toThrowError(`No panel with ID ${preChatID}`)
             await expect(
@@ -129,9 +126,7 @@ describe(
             const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'hello after reauthentication'
             )
-            expect(chat.lastMessage?.model).toBe(
-                FIXTURE_MODELS.differentFromDotcomAndS2DefaultChatModel[0]
-            )
+            expect(chat.lastMessage?.model).toBe(FIXTURE_MODELS.differentFromS2DefaultChatModel[0])
             expect(chat.lastMessage?.error).toBe(undefined)
 
             // Listing models should work.
@@ -161,7 +156,7 @@ describe(
             const preChatID = await client.request('chat/new', null)
             await client.request('chat/setModel', {
                 id: preChatID,
-                model: FIXTURE_MODELS.differentFromDotcomAndS2DefaultChatModel[0],
+                model: FIXTURE_MODELS.differentFromS2DefaultChatModel[0],
             })
 
             const authStatus = await client.request('extensionConfiguration/change', {
