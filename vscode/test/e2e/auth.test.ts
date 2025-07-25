@@ -14,7 +14,6 @@ test.extend<ExpectedV2Events>({
     // list of V2 telemetry events we expect this test to log, add to this list as needed
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.auth.login:clicked',
         'cody.auth.login:firstEver',
         'cody.auth.login.token:clicked',
         'cody.auth:connected',
@@ -23,8 +22,6 @@ test.extend<ExpectedV2Events>({
         'cody.signInNotification:shown',
     ],
 })('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
-    await expect(sidebar!.getByText('Sign in to Sourcegraph')).toBeVisible()
-    await sidebar!.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
     await sidebar!.getByText('Sourcegraph Instance URL').click()
     await sidebar!.getByPlaceholder('Example: https://instance.').click()
     await sidebar!.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)
@@ -64,7 +61,6 @@ test
         // list of V2 telemetry events we expect this test to log, add to this list as needed
         expectedV2Events: [
             'cody.extension:installed',
-            'cody.auth.login:clicked',
             'cody.auth.login.token:clicked',
             'cody.auth:disconnected',
             'cody.signInNotification:shown',
@@ -93,7 +89,6 @@ test
         // list of V2 telemetry events we expect this test to log, add to this list as needed
         expectedV2Events: [
             'cody.extension:installed',
-            'cody.auth.login:clicked',
             'cody.auth.login.token:clicked',
             'cody.auth:disconnected',
             'cody.signInNotification:shown',
@@ -120,7 +115,6 @@ test
 test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.auth.login:clicked',
         'cody.auth.login:firstEver',
         'cody.auth.login.token:clicked',
         'cody.auth:connected',
@@ -130,8 +124,6 @@ test.extend<ExpectedV2Events>({
     ],
 })
     .skip('switch account via account dropwdown menu in webview', async ({ page, sidebar }) => {
-        await expect(sidebar!.getByText('Sign in to Sourcegraph')).toBeVisible()
-        await sidebar!.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
         await sidebar!.getByText('Sourcegraph Instance URL').click()
         await sidebar!.getByPlaceholder('Example: https://instance.').click()
         await sidebar!.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)
