@@ -176,7 +176,6 @@ class GraphQlMock {
 export class MockServer {
     graphQlMocks: Map<string, GraphQlMock> = new Map();
     availableLLMs: ServerModelConfiguration | undefined = getServerSentModelsMock();
-    userShouldUseEnterprise: boolean = false;
     featureFlags: Map<string, boolean> = new Map([]);
 
     constructor(public readonly express: express.Express) {}
@@ -188,10 +187,6 @@ export class MockServer {
             this.graphQlMocks.set(operation, mock);
         }
         return mock;
-    }
-
-    public setUserShouldUseEnterprise(value: boolean) {
-        this.userShouldUseEnterprise = value;
     }
 
     public setAvailableLLMs(config: ServerModelConfiguration) {
@@ -262,17 +257,12 @@ export class MockServer {
 
         /** Whether to simulate that rate limits have been hit */
         let chatRateLimited = false;
-        /** Whether the user is Pro (true), Free (false) or not a dotCom user (undefined) */
-        let chatRateLimitPro: boolean | undefined;
         app.post("/.api/completions/stream", (req, res) => {
             const apiVersion = Number.parseInt(req?.query?.["api-version"] as string ?? '1', 10)
             if (chatRateLimited) {
                 res.set({
                     "retry-after": new Date().toString(),
                     "x-ratelimit-limit": "12345",
-                    ...(chatRateLimitPro !== undefined && {
-                        "x-is-cody-pro-user": `${chatRateLimitPro}`,
-                    }),
                 });
                 res.sendStatus(429);
                 return;
@@ -342,22 +332,18 @@ export class MockServer {
 
         app.post("/.test/completions/triggerRateLimit", (req, res) => {
             chatRateLimited = true;
-            chatRateLimitPro = undefined;
             res.sendStatus(200);
         });
         app.post("/.test/completions/triggerRateLimit/free", (req, res) => {
             chatRateLimited = true;
-            chatRateLimitPro = false;
             res.sendStatus(200);
         });
         app.post("/.test/completions/triggerRateLimit/pro", (req, res) => {
             chatRateLimited = true;
-            chatRateLimitPro = true;
             res.sendStatus(200);
         });
         app.post("/.test/completions/triggerRateLimit/enterprise", (req, res) => {
             chatRateLimited = true;
-            chatRateLimitPro = undefined;
             res.sendStatus(200);
         });
         app.post("/.api/completions/code", (req, res) => {
@@ -416,7 +402,7 @@ export class MockServer {
                     attribution,
                     // When server-sent LLMs have been set, we enable the models api
                     modelsAPIEnabled: !!controller.availableLLMs,
-                    userShouldUseEnterprise: controller.userShouldUseEnterprise,
+                    userShouldUseEnterprise: true,
                 }),
             );
         });
