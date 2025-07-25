@@ -434,8 +434,10 @@ export class ModelsService {
                     return pendingOperation
                 }
 
-                // Remove deprecated models from the list
-                models = models.filter(model => !model.tags.includes(ModelTag.Deprecated))
+                models = models
+                    .filter(model => !model.tags.includes(ModelTag.Deprecated))
+                    .filter(model => !model.tags.includes(ModelTag.Waitlist))
+                    .filter(model => !model.tags.includes(ModelTag.OnWaitlist))
 
                 // Find the first model the user can use that isn't a reasoning model
                 const firstModelUserCanUse = models.find(
