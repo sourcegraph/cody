@@ -313,6 +313,14 @@ export class TestClient extends MessageHandler {
         this.registerRequest('textDocument/show', () => {
             return Promise.resolve(true)
         })
+        this.registerRequest('textEditor/selection', () => {
+            // No-op handler for textEditor/selection requests in test environment
+            return Promise.resolve(null)
+        })
+        this.registerRequest('textEditor/revealRange', () => {
+            // No-op handler for textEditor/revealRange requests in test environment
+            return Promise.resolve(null)
+        })
         this.registerRequest('editTask/getUserInput', async params => {
             return {
                 instruction: this.userInput.instruction ?? params.instruction,
