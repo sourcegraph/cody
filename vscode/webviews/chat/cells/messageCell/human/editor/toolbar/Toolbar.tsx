@@ -82,12 +82,10 @@ export const Toolbar: FunctionComponent<{
      * or is using a BYOK model with vision tag.
      */
     const isImageUploadEnabled = useMemo(() => {
-        const isDotCom = userInfo?.isDotComUser
         const selectedModel = models?.[0]
-        const isBYOK = selectedModel?.tags?.includes(ModelTag.BYOK)
         const isVision = selectedModel?.tags?.includes(ModelTag.Vision)
-        return (!isDotCom || isBYOK) && isVision
-    }, [userInfo?.isDotComUser, models?.[0]])
+        return isVision
+    }, [models?.[0]])
 
     const modelSelectorRef = useRef<{ open: () => void; close: () => void } | null>(null)
     const promptSelectorRef = useRef<{ open: () => void; close: () => void } | null>(null)
