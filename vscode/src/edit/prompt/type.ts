@@ -48,6 +48,7 @@ export interface GetLLMInteractionOptions {
     uri: vscode.Uri
     document: vscode.TextDocument
     rules?: Rule[] | null
+    isReasoningModel?: boolean
 }
 
 type LLMInteractionBuilder = (options: GetLLMInteractionOptions) => LLMInteraction

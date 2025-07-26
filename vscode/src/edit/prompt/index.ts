@@ -5,10 +5,10 @@ import {
     type ChatMessage,
     type EditModel,
     type EditProvider,
+    ModelTag,
     PromptString,
     TokenCounterUtils,
     currentResolvedConfig,
-    getModelInfo,
     getSimplePreamble,
     modelsService,
     ps,
@@ -23,10 +23,10 @@ import { openai } from './models/openai'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
 const INTERACTION_PROVIDERS: Record<EditProvider, EditLLMInteraction> = {
-    Anthropic: claude,
-    OpenAI: openai,
+    anthropic: claude,
+    openai: openai,
     // NOTE: Sharing the same model for GPT models for now.
-    Google: openai,
+    google: openai,
 } as const
 
 const getInteractionArgsFromIntent = (
@@ -34,21 +34,24 @@ const getInteractionArgsFromIntent = (
     model: EditModel,
     options: GetLLMInteractionOptions
 ): LLMInteraction => {
-    const { provider } = getModelInfo(model)
+    const modelInfo = modelsService.getModelByID(model)
+    const isReasoningModel = modelInfo?.tags.includes(ModelTag.Reasoning)
+    console.log(modelInfo)
     // Default to the generic Claude prompt if the provider is unknown
-    const interaction = INTERACTION_PROVIDERS[provider] || claude
+    const interaction = INTERACTION_PROVIDERS[modelInfo?.provider || ''] || claude
+
     switch (intent) {
         case 'add':
-            return interaction.getAdd(options)
+            return interaction.getAdd({ ...options, isReasoningModel })
         case 'fix':
-            return interaction.getFix(options)
+            return interaction.getFix({ ...options, isReasoningModel })
         case 'doc':
-            return interaction.getDoc(options)
+            return interaction.getDoc({ ...options, isReasoningModel })
         case 'edit':
         case 'smartApply':
-            return interaction.getEdit(options)
+            return interaction.getEdit({ ...options, isReasoningModel })
         case 'test':
-            return interaction.getTest(options)
+            return interaction.getTest({ ...options, isReasoningModel })
     }
 }
 

@@ -155,10 +155,6 @@ export function createModelFromServerModel(
         output: maxOutputTokens,
     }
     const usage = capabilities.flatMap(capabilityToUsage)
-    // NOTE: Model with reasoning enabled should only be used for chat.
-    if (capabilities.includes('reasoning') && usage.includes(ModelUsage.Edit)) {
-        usage.splice(usage.indexOf(ModelUsage.Edit), 1)
-    }
     // Use Extended Context Window
     if (maxInputTokens === EXTENDED_CHAT_INPUT_TOKEN_BUDGET + EXTENDED_USER_CONTEXT_TOKEN_BUDGET) {
         _contextWindow.input = EXTENDED_CHAT_INPUT_TOKEN_BUDGET
